@@ -62,6 +62,8 @@ const mainServices = [
       "Do conceito ao produto funcional em 6–10 semanas. Arquitetura escalável desde o dia 1, design system básico e deploy pronto.",
     techs: "Next.js · React · Node.js · PostgreSQL · AWS",
     price: "R$ 15.000 – R$ 35.000",
+    included:
+      "Escopo fechado: entrega do produto acordado, com 30 dias de garantia. Evolução e novas features após a entrega seguem no modelo de retainer.",
   },
   {
     icon: Monitor,
@@ -70,6 +72,8 @@ const mainServices = [
       "Plataformas, painéis administrativos, ERPs e portais construídos do zero com código limpo, testes e documentação completa.",
     techs: "React · NestJS · Java · Spring Boot · Docker",
     price: "R$ 25.000 – R$ 80.000",
+    included:
+      "Preço por escopo definido em conjunto no diagnóstico. Não inclui manutenção contínua nem mudanças de escopo — essas entram via retainer ou novo orçamento.",
   },
   {
     icon: BrainCircuit,
@@ -78,6 +82,8 @@ const mainServices = [
       "Chatbots, extração de dados, classificação de documentos e workflows inteligentes integrados ao seu sistema existente.",
     techs: "Python · OpenAI · LangChain · FastAPI · n8n",
     price: "R$ 10.000 – R$ 40.000",
+    included:
+      "Inclui a automação entregue e integrada ao seu sistema. Custos de API/modelo e o ajuste fino contínuo após a entrega são acompanhados via retainer.",
   },
   {
     icon: Blocks,
@@ -86,6 +92,8 @@ const mainServices = [
       "Conectamos seu sistema a ERPs, gateways de pagamento, CRMs e serviços externos com APIs robustas e documentadas.",
     techs: "REST · GraphQL · Webhooks · Node.js · Java",
     price: "R$ 8.000 – R$ 25.000",
+    included:
+      "Cobre as integrações do escopo acordado, testadas e documentadas. Monitoramento e adaptações a mudanças de terceiros ao longo do tempo ficam no retainer.",
   },
 ];
 
@@ -241,6 +249,13 @@ export default function ServicosPage() {
             <h2 className="font-display text-3xl font-bold text-text md:text-4xl">
               Desenvolvimento e entrega
             </h2>
+            <p className="mt-4 max-w-2xl text-text-secondary leading-relaxed">
+              Projeto fechado é preço por escopo definido — você paga pela
+              entrega combinada, não por hora. Por isso a conta por hora parece
+              menor que a do retainer: no retainer você contrata disponibilidade
+              sênior contínua e prioridade, não um escopo pronto. São modelos
+              para momentos diferentes, não substitutos.
+            </p>
           </FadeIn>
 
           <StaggerContainer className="mt-14 grid gap-6 md:grid-cols-2">
@@ -267,6 +282,9 @@ export default function ServicosPage() {
                   <div className="mt-6 border-t border-gray-100 pt-6">
                     <p className="font-display text-xl font-bold text-text">
                       {service.price}
+                    </p>
+                    <p className="mt-2 text-xs leading-relaxed text-text-secondary">
+                      {service.included}
                     </p>
                   </div>
                 </div>
