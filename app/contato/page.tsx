@@ -21,9 +21,9 @@ const channels = [
   {
     icon: MessageCircle,
     label: "WhatsApp",
-    value: "+55 (11) 99999-9999",
+    value: "+55 (11) 97045-2495",
     note: "Resposta mais rápida",
-    href: "https://wa.me/5511999999999",
+    href: "https://wa.me/5511970452495",
   },
   {
     icon: Mail,
@@ -41,7 +41,7 @@ const channels = [
     label: "LinkedIn",
     value: "/company/nexcript",
     note: null,
-    href: "https://linkedin.com/company/nexcript",
+    href: "https://www.linkedin.com/company/nexcript/",
   },
 ];
 

@@ -80,44 +80,47 @@ const services = [
 
 const stats = [
   { value: 14, suffix: "+", label: "anos de experiência" },
-  { value: 50, suffix: "+", label: "projetos entregues" },
+  { value: 2, suffix: "", label: "sócios sênior — zero terceirização" },
   { value: 100, suffix: "%", label: "código documentado" },
   { value: 30, suffix: "", label: "dias de garantia" },
 ];
 
+// Cenários ilustrativos de capacidade técnica (não são projetos entregues a clientes).
+// O projeto próprio de portfólio (FinFlow) e o detalhamento completo ficam em /cases.
 const cases = [
   {
     badge: "Fintech",
     title: "Plataforma de crédito consignado",
     stack: "Next.js · Node.js · PostgreSQL · AWS",
-    result: "3x mais velocidade na aprovação de contratos",
+    result: "Acelerar a aprovação de contratos com um fluxo digital",
   },
   {
     badge: "SaaS",
     title: "Sistema de gestão para clínicas",
     stack: "React · NestJS · MongoDB · Docker",
-    result: "Redução de 70% no tempo de agendamento",
+    result: "Reduzir o tempo de agendamento com automação",
   },
   {
     badge: "E-commerce",
     title: "Motor de recomendação com IA",
     stack: "Python · FastAPI · React · Redis",
-    result: "+42% no ticket médio em 3 meses",
+    result: "Elevar o ticket médio com recomendações relevantes",
   },
   {
     badge: "Logística",
     title: "Automação de roteirização de entregas",
     stack: "Java · Spring Boot · React · AWS",
-    result: "Economia de R$ 180k/mês em combustível",
+    result: "Cortar custo de combustível otimizando rotas",
   },
 ];
 
+// Posicionamento do fundador — não é um depoimento de cliente.
 const testimonial = {
   quote:
-    "A NexCript não é uma fábrica de software — são parceiros técnicos de verdade. Entenderam nosso problema, propuseram uma arquitetura que fez sentido e entregaram no prazo. Nosso sistema hoje roda com metade dos custos de infra.",
-  name: "Mariana Oliveira",
-  role: "CTO",
-  company: "CrediFácil",
+    "A NexCript existe para ser o oposto de uma fábrica de software: entender o problema antes de escrever código, propor a arquitetura certa e tratar cada projeto como se fosse nosso. Arquitetura bem pensada desde o início economiza retrabalho e custo lá na frente.",
+  name: "Justino Silva",
+  role: "Fundador",
+  company: "NexCript",
 };
 
 const techLogos = ["React", "Node.js", "Java", "NestJS", "AWS"];
@@ -192,7 +195,7 @@ export default function Home() {
                 href="/cases"
                 className="rounded-lg border border-white/20 px-7 py-3.5 font-semibold text-white transition-all duration-300 hover:border-white/40 hover:bg-white/5"
               >
-                Cases reais
+                Ver cases
               </Link>
             </div>
 

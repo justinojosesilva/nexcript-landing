@@ -7,7 +7,7 @@ import { CasesGrid } from "./CasesGrid";
 export const metadata: Metadata = {
   title: "Cases — NexCript",
   description:
-    "Problemas reais, soluções concretas. Conheça os projetos que entregamos para fintechs, SaaS, varejo e mais.",
+    "Um projeto próprio de portfólio e cenários que ilustram como abordamos problemas de fintech, SaaS, varejo e mais.",
 };
 
 export default function CasesPage() {
@@ -37,9 +37,11 @@ export default function CasesPage() {
             <h1 className="max-w-3xl font-display text-3xl font-bold leading-tight text-white md:text-4xl lg:text-5xl">
               Problemas reais. Soluções concretas.
             </h1>
-            <p className="mt-5 max-w-xl text-lg leading-relaxed text-gray-400">
+            <p className="mt-5 max-w-2xl text-lg leading-relaxed text-gray-400">
               Cada projeto começa com um problema de negócio, não com uma lista
-              de tecnologias.
+              de tecnologias. Abaixo você encontra um projeto próprio de
+              portfólio e uma série de cenários que ilustram como abordamos cada
+              tipo de problema.
             </p>
           </FadeIn>
         </div>
