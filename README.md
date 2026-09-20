@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Nexcript — landing page comercial
 
-## Getting Started
+Site em Next.js 16, React 19 e Tailwind CSS 4. A página inicial apresenta a oferta do MVP comercial: sites para pequenas empresas, Nexcript Care e evolução para automação e software.
 
-First, run the development server:
+## Executar
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
+```sh
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Verificar
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```sh
+pnpm lint
+pnpm build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+O build usa `next/font/google` (Manrope, Syne e JetBrains Mono) e precisa de acesso ao Google Fonts na primeira compilação. As fontes são servidas pelo próprio Next.js após o build.
 
-## Learn More
+## Contato
 
-To learn more about Next.js, take a look at the following resources:
+O WhatsApp oficial informado pelo responsável está em `lib/contact.ts`: `5511970452495`. Pode ser substituído por `NEXT_PUBLIC_WHATSAPP_NUMBER` no ambiente de build; veja `.env.example`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+O formulário valida os campos e abre uma mensagem preenchida no WhatsApp. O visitante precisa concluir o envio no aplicativo. Não há envio automático, API de e-mail, banco de leads ou integração ao CRM. Não é exibida uma confirmação falsa de recebimento.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Para usar e-mail como alternativa, configure `NEXT_PUBLIC_CONTACT_EMAIL` e deixe `NEXT_PUBLIC_WHATSAPP_NUMBER` vazio. O formulário abrirá o aplicativo de e-mail do visitante. Não configure segredos nessas variáveis públicas. Reinicie o servidor/recompile após alterá-las.
 
-## Deploy on Vercel
+## Conteúdo
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Ofertas, preços e prazos: `app/page.tsx`, baseados em `../documentos/MVP_Comercial_Nexcript.md`.
+- Visual e responsividade: `app/globals.css` (classes `nx-*`).
+- Cabeçalho e rodapé: `components/layout/`.
+- Formulário: `app/contato/ContactForm.tsx`.
+- `/contato` redireciona para `/#diagnostico`.
+- Aurora e Prumo são conceitos ilustrativos, não cases de clientes.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+As páginas anteriores `/servicos`, `/cases`, `/sobre` e `/blog` foram preservadas e não aparecem na navegação da landing page. Ainda precisam de revisão editorial antes de serem divulgadas, especialmente alegações de resultados e experiência. A página inicial já usa o posicionamento atual.
+
+Não houve publicação em produção. Antes de publicar, definir domínio/hosting e decidir se haverá captura independente de leads, analytics e política de privacidade específica para essas ferramentas.

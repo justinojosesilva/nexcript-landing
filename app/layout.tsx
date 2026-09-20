@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Inter, Syne, JetBrains_Mono } from "next/font/google";
+import { Manrope, Syne, JetBrains_Mono } from "next/font/google";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
 });
 
@@ -20,9 +20,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NexCript — Consultoria em Tecnologia",
+  title: "Nexcript — Sites, automações e software para empresas",
   description:
-    "De MVP à escala — arquitetura limpa, código que dura. Desenvolvemos sistemas, automações e produtos digitais sob medida para startups e empresas em crescimento.",
+    "Sites profissionais para pequenas empresas: Landing Page, Site Essencial e Site Business. Conheça o Nexcript Care e solicite seu diagnóstico gratuito.",
 };
 
 export default function RootLayout({
@@ -33,11 +33,13 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${inter.variable} ${syne.variable} ${jetbrainsMono.variable}`}
+      className={`${manrope.variable} ${syne.variable} ${jetbrainsMono.variable}`}
     >
       <body className="min-h-dvh flex flex-col">
         <Navbar />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1" id="principal">
+          {children}
+        </main>
         <Footer />
       </body>
     </html>
