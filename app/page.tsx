@@ -470,7 +470,7 @@ export default function Home() {
             </div>
             <p>
               Conheça um projeto institucional, um produto SaaS em desenvolvimento
-              e dois conceitos visuais para os nichos que atendemos.
+              e duas demonstrações navegáveis para os nichos que atendemos.
             </p>
           </div>
           <article className="nx-real-case">
@@ -585,10 +585,6 @@ export default function Home() {
               </a>
             </div>
           </article>
-          <p className="nx-demo-note">
-            Os dois cards abaixo são estudos visuais ilustrativos e não
-            representam clientes atendidos ou resultados obtidos.
-          </p>
           <div className="nx-demo-grid">
             <article>
               <div className="nx-demo-window nx-demo-clinic">
@@ -625,16 +621,18 @@ export default function Home() {
               </div>
               <div className="nx-demo-description">
                 <div>
-                  <span>CONCEITO / CLÍNICAS E CONSULTÓRIOS</span>
+                  <span>DEMONSTRAÇÃO / CLÍNICAS E CONSULTÓRIOS</span>
                   <h3>Confiança antes do agendamento.</h3>
                   <p>
-                    Especialidades, equipe e localização organizadas para
-                    facilitar o primeiro contato.
+                    Demonstração navegável com especialidades, equipe e
+                    localização organizadas para facilitar o primeiro contato.
                   </p>
                 </div>
                 <a
-                  href="#diagnostico"
-                  aria-label="Conversar sobre um site para clínicas"
+                  href="https://aurora-six-dun.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Visitar a demonstração Aurora"
                 >
                   <ArrowUpRight />
                 </a>
@@ -674,16 +672,18 @@ export default function Home() {
               </div>
               <div className="nx-demo-description">
                 <div>
-                  <span>CONCEITO / PRESTADORES DE SERVIÇOS</span>
+                  <span>DEMONSTRAÇÃO / PRESTADORES DE SERVIÇOS</span>
                   <h3>Do serviço ao pedido de orçamento.</h3>
                   <p>
-                    Portfólio, região atendida e informações que ajudam a
-                    qualificar cada solicitação.
+                    Demonstração navegável com serviços, área de atendimento e
+                    informações que ajudam a qualificar cada solicitação.
                   </p>
                 </div>
                 <a
-                  href="#diagnostico"
-                  aria-label="Conversar sobre um site para prestadores de serviços"
+                  href="https://prumo-lemon.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Visitar a demonstração Prumo"
                 >
                   <ArrowUpRight />
                 </a>
