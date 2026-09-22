@@ -1,0 +1,12 @@
+/* Tokens mínimos: uma marca, uma superfície, uma ação e uma escala de espaço. */
+:root {
+  --starter-ink: #152b35;
+  --starter-paper: #faf9f5;
+  --starter-action: #f47b45;
+  --starter-line: #dedfd8;
+  --starter-space-1: 0.5rem;
+  --starter-space-2: 1rem;
+  --starter-space-3: 1.5rem;
+  --starter-space-4: 2.5rem;
+  --starter-space-5: 4.5rem;
+}

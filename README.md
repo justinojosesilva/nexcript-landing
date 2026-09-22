@@ -28,6 +28,10 @@ Para usar e-mail como alternativa, configure `NEXT_PUBLIC_CONTACT_EMAIL` e deixe
 
 ## Conteúdo
 
+## Starter Kit técnico
+
+Há uma base reutilizável para novos projetos em [`STARTER_KIT.md`](STARTER_KIT.md). Ela concentra configuração por cliente (`starter.config.ts`), SEO, eventos, integrações de contato, formulário, seções e tokens de tema. A estrutura foi dimensionada para um Site Essencial em 12–15 dias úteis, sem incorporar CMS ou um design system grande antes de haver necessidade.
+
 - Ofertas, preços e prazos: `app/page.tsx`, baseados em `../documentos/MVP_Comercial_Nexcript.md`.
 - Visual e responsividade: `app/globals.css` (classes `nx-*`).
 - Cabeçalho e rodapé: `components/layout/`.
@@ -35,6 +39,6 @@ Para usar e-mail como alternativa, configure `NEXT_PUBLIC_CONTACT_EMAIL` e deixe
 - `/contato` redireciona para `/#diagnostico`.
 - Aurora e Prumo são conceitos ilustrativos, não cases de clientes.
 
-As páginas anteriores `/servicos`, `/cases`, `/sobre` e `/blog` foram preservadas e não aparecem na navegação da landing page. Ainda precisam de revisão editorial antes de serem divulgadas, especialmente alegações de resultados e experiência. A página inicial já usa o posicionamento atual.
+As páginas do site anterior (`/servicos`, `/cases`, `/sobre` e `/blog`) foram removidas e redirecionam permanentemente para a home (`next.config.ts`).
 
 Não houve publicação em produção. Antes de publicar, definir domínio/hosting e decidir se haverá captura independente de leads, analytics e política de privacidade específica para essas ferramentas.
