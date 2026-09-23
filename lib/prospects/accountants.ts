@@ -125,12 +125,16 @@ export async function updateAccountant(
   });
 }
 
-/** Mensagem de parceria: confirma se é mesmo contabilidade antes de propor. */
+/**
+ * Mensagem de parceria: confirma se é mesmo contabilidade e oferece o site do
+ * escritório como contrapartida pelas indicações (decisão de 23/09/2026).
+ */
 export function partnershipMessage(a: Accountant, sender: string) {
   return (
     `Olá! Sou ${sender}, da Nexcript. Vi que este número aparece no cadastro de várias empresas ` +
     `abertas recentemente${a.cities[0] ? ` em ${a.cities[0].split("/")[0]}` : ""}. Imagino que seja de um escritório de contabilidade, certo? ` +
     `A gente cria sites para empresas que estão começando, e muitos clientes precisam disso logo na abertura. ` +
-    `Faria sentido uma parceria de indicação que seja boa para os dois lados? Posso explicar em 10 minutos.`
+    `A ideia é uma parceria: vocês indicam a Nexcript para os clientes que estão abrindo empresa, e em troca a gente faz o site do escritório de vocês. ` +
+    `Posso explicar em 10 minutos?`
   );
 }

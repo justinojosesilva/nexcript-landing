@@ -75,9 +75,9 @@ export default async function AccountantsPage({ searchParams }: { searchParams: 
       </nav>
 
       <p className={styles.hint}>
-        A mensagem confirma primeiro se o número é mesmo de contabilidade. Antes de propor comissão,
-        combinem entre vocês qual contrapartida oferecer (comissão por indicação ou site do
-        escritório, como no brainstorming).
+        A mensagem confirma primeiro se o número é mesmo de contabilidade e oferece o site do
+        escritório em troca das indicações. As regras da parceria estão em
+        Parceria_Contadores_Nexcript.md (documentos).
       </p>
 
       {accountants.length === 0 ? (
