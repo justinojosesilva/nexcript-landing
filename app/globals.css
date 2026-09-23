@@ -2093,3 +2093,33 @@ summary:focus-visible {
     transition: none !important;
   }
 }
+.nx-not-found {
+  display: flex;
+  align-items: center;
+  padding-block: 96px;
+  min-height: 60dvh;
+}
+.nx-not-found h1 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(38px, 5vw, 64px);
+  line-height: 1.05;
+  letter-spacing: -2.5px;
+}
+.nx-not-found h1 > span {
+  color: #b94b26;
+}
+.nx-not-found .nx-container > p:not(.nx-eyebrow) {
+  max-width: 520px;
+  margin-top: 24px;
+  color: var(--nx-muted);
+  line-height: 1.9;
+}
+@media (max-width: 700px) {
+  .nx-not-found {
+    padding-block: 64px;
+  }
+  .nx-not-found h1 {
+    letter-spacing: -1.5px;
+  }
+}
