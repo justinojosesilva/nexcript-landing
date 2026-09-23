@@ -6,6 +6,7 @@ import { buildMessage, visitScript, whatsappLink } from "@/lib/prospects/message
 import { findNiche } from "@/lib/prospects/niches";
 import { registerContactAction, saveProspect } from "./actions";
 import { CloseOnEscape } from "./CloseOnEscape";
+import { DialogTabs } from "./DialogTabs";
 import styles from "../panel.module.css";
 
 function hostOf(url: string) {
@@ -23,15 +24,117 @@ const dateTime = new Intl.DateTimeFormat("pt-BR", {
 });
 
 /**
- * Detalhe do prospect, aberto por ?id= na URL: funciona sem JavaScript, pode
- * ser compartilhado entre Justino e Andréia e fecha com Esc ou pelo link.
+ * Detalhe do prospect, aberto por ?id= na URL: pode ser compartilhado entre
+ * Justino e Andréia e fecha com Esc ou pelo link. As seções ficam em abas.
  */
-export function ProspectDialog({ prospect: p, closeHref }: { prospect: Prospect; closeHref: string }) {
+export function ProspectDialog({
+  prospect: p,
+  closeHref,
+}: {
+  prospect: Prospect;
+  closeHref: string;
+}) {
   const step = currentStep(p.contactAttempts);
   const sender = p.owner ?? "Justino";
   const message = step ? buildMessage(p, step, sender) : null;
   const mobile = p.phone ? isMobile(p.phone) : false;
   const closed = ["ganho", "perdido", "descartado"].includes(p.status);
+
+  const nextContact = (
+    <>
+      <h3>{step && !closed ? step.label : "Cadência encerrada"}</h3>
+      {message && !closed ? (
+        <>
+          <p className={styles.messageBox}>{message}</p>
+          <div className={styles.actions}>
+            {p.phone && (
+              <a
+                className={styles.primary}
+                href={whatsappLink(p.phone, message)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Abrir no WhatsApp com a mensagem
+              </a>
+            )}
+            <form action={registerContactAction} className={styles.inline}>
+              <input type="hidden" name="id" value={p.id} />
+              <input type="hidden" name="by" value={sender} />
+              <select
+                name="channel"
+                defaultValue={p.visitable && p.owner === "Andréia" ? "Visita" : "WhatsApp"}
+                aria-label="Canal usado"
+              >
+                {contactChannels.map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+              <button type="submit">Registrar contato feito</button>
+            </form>
+          </div>
+          <p className={styles.hint}>
+            Revise a mensagem no WhatsApp antes de enviar e só registre depois de enviar. O registro
+            agenda o próximo contato e anota o histórico.
+            {!mobile && p.phone && " Telefone fixo: prefira ligar ou visitar."}
+          </p>
+        </>
+      ) : (
+        <p className={styles.hint}>
+          {closed
+            ? `Status "${p.status}". Para retomar, mude o status na aba Acompanhamento.`
+            : "Todas as etapas foram registradas."}
+        </p>
+      )}
+    </>
+  );
+
+  const visit = (
+    <ol className={styles.script}>
+      {visitScript(p, p.owner === "Justino" ? "Justino" : "Andréia").map((line) => (
+        <li key={line}>{line}</li>
+      ))}
+    </ol>
+  );
+
+  const followUp = (
+    <>
+      {/* A key recria o formulário após salvar, com os valores atualizados. */}
+      <form
+        key={`${p.status}-${p.owner ?? ""}-${p.notes ?? ""}`}
+        action={saveProspect}
+        className={styles.form}
+      >
+        <input type="hidden" name="id" value={p.id} />
+        <label>
+          Status
+          <select name="status" defaultValue={p.status}>
+            {prospectStatuses.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Responsável
+          <select name="owner" defaultValue={p.owner ?? ""}>
+            <option value="">—</option>
+            {prospectOwners.map((o) => (
+              <option key={o}>{o}</option>
+            ))}
+          </select>
+        </label>
+        <label className={styles.notes}>
+          Anotações
+          <textarea
+            name="notes"
+            rows={4}
+            defaultValue={p.notes ?? ""}
+            placeholder="Nome do responsável, o que foi conversado, próxima ação..."
+          />
+        </label>
+        <button type="submit">Salvar</button>
+      </form>
+    </>
+  );
 
   return (
     <div className={styles.overlay}>
@@ -78,12 +181,15 @@ export function ProspectDialog({ prospect: p, closeHref }: { prospect: Prospect;
             </div>
             <div>
               <dt>Endereço</dt>
-              <dd>{p.address ?? ([p.neighborhood, p.city, p.state].filter(Boolean).join(", ") || "—")}</dd>
+              <dd>
+                {p.address ?? ([p.neighborhood, p.city, p.state].filter(Boolean).join(", ") || "—")}
+              </dd>
             </div>
             <div>
               <dt>Google</dt>
               <dd>
-                {p.rating !== null ? `★ ${p.rating.toFixed(1)}` : "sem nota"} · {p.reviews ?? 0} avaliações
+                {p.rating !== null ? `★ ${p.rating.toFixed(1)}` : "sem nota"} · {p.reviews ?? 0}{" "}
+                avaliações
                 {p.mapsUrl && (
                   <>
                     {" · "}
@@ -127,101 +233,17 @@ export function ProspectDialog({ prospect: p, closeHref }: { prospect: Prospect;
             </div>
           </dl>
 
-          <section className={styles.block}>
-            <h3>{step && !closed ? `Próximo contato: ${step.label}` : "Cadência encerrada"}</h3>
-            {message && !closed ? (
-              <>
-                <p className={styles.messageBox}>{message}</p>
-                <div className={styles.actions}>
-                  {p.phone && (
-                    <a
-                      className={styles.primary}
-                      href={whatsappLink(p.phone, message)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Abrir no WhatsApp com a mensagem
-                    </a>
-                  )}
-                  <form action={registerContactAction} className={styles.inline}>
-                    <input type="hidden" name="id" value={p.id} />
-                    <input type="hidden" name="by" value={sender} />
-                    <select
-                      name="channel"
-                      defaultValue={p.visitable && p.owner === "Andréia" ? "Visita" : "WhatsApp"}
-                      aria-label="Canal usado"
-                    >
-                      {contactChannels.map((c) => (
-                        <option key={c}>{c}</option>
-                      ))}
-                    </select>
-                    <button type="submit">Registrar contato feito</button>
-                  </form>
-                </div>
-                <p className={styles.hint}>
-                  Revise a mensagem no WhatsApp antes de enviar e só registre depois de enviar. O
-                  registro agenda o próximo contato e anota o histórico.
-                  {!mobile && p.phone && " Telefone fixo: prefira ligar ou visitar."}
-                </p>
-              </>
-            ) : (
-              <p className={styles.hint}>
-                {closed
-                  ? `Status "${p.status}". Para retomar, mude o status abaixo.`
-                  : "Todas as etapas foram registradas."}
-              </p>
-            )}
-          </section>
-
-          {p.visitable && !closed && (
-            <section className={styles.block}>
-              <h3>Roteiro de visita</h3>
-              <ol className={styles.script}>
-                {visitScript(p, p.owner === "Justino" ? "Justino" : "Andréia").map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ol>
-            </section>
-          )}
-
-          <section className={styles.block}>
-            <h3>Acompanhamento</h3>
-            {/* A key recria o formulário após salvar, com os valores atualizados. */}
-            <form
-              key={`${p.status}-${p.owner ?? ""}-${p.notes ?? ""}`}
-              action={saveProspect}
-              className={styles.form}
-            >
-              <input type="hidden" name="id" value={p.id} />
-              <label>
-                Status
-                <select name="status" defaultValue={p.status}>
-                  {prospectStatuses.map((s) => (
-                    <option key={s}>{s}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Responsável
-                <select name="owner" defaultValue={p.owner ?? ""}>
-                  <option value="">—</option>
-                  {prospectOwners.map((o) => (
-                    <option key={o}>{o}</option>
-                  ))}
-                </select>
-              </label>
-              <label className={styles.notes}>
-                Anotações
-                <textarea
-                  name="notes"
-                  rows={4}
-                  defaultValue={p.notes ?? ""}
-                  placeholder="Nome do responsável, o que foi conversado, próxima ação..."
-                />
-              </label>
-              <button type="submit">Salvar</button>
-            </form>
-          </section>
+          <DialogTabs
+            // Encerrados abrem direto no acompanhamento, onde se retoma o status.
+            initial={closed ? "acompanhamento" : "contato"}
+            tabs={[
+              { id: "contato", label: "Próximo contato", content: nextContact },
+              ...(p.visitable && !closed
+                ? [{ id: "visita", label: "Roteiro de visita", content: visit }]
+                : []),
+              { id: "acompanhamento", label: "Acompanhamento", content: followUp },
+            ]}
+          />
         </div>
       </section>
     </div>

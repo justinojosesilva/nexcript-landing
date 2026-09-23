@@ -594,3 +594,52 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Abas do diálogo */
+.tabs {
+  border-top: 1px solid var(--nx-line);
+  padding-top: 4px;
+}
+
+.tabList {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* Linha de base desenhada por dentro, sem estourar a altura da lista. */
+  box-shadow: inset 0 -1px 0 var(--nx-line);
+}
+
+.tabList button {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  border-bottom: 2px solid transparent;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--nx-muted);
+  cursor: pointer;
+}
+
+.tabList button:hover {
+  color: var(--nx-ink);
+}
+
+.tabList button[aria-selected="true"] {
+  color: var(--nx-ink);
+  border-bottom-color: var(--nx-orange);
+}
+
+.tabPanel {
+  display: grid;
+  gap: 10px;
+  padding-top: 16px;
+}
+
+.tabPanel[hidden] {
+  display: none;
+}
+
+.tabPanel h3 {
+  font-size: 14px;
+  font-weight: 800;
+}
