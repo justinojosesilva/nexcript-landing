@@ -24,7 +24,7 @@ export function DialogTabs({ tabs, initial }: { tabs: DialogTab[]; initial?: str
 
   return (
     <div className={styles.tabs}>
-      <div role="tablist" aria-label="Seções do prospect" className={styles.tabList}>
+      <div role="tablist" aria-label="Seções do detalhe" className={styles.tabList}>
         {tabs.map((tab, index) => (
           <button
             key={tab.id}

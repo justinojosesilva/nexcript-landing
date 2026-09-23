@@ -1,6 +1,6 @@
 import type { Row } from "@libsql/client";
 import { schemaOnce } from "../db";
-import { cadenceSteps, currentStep, todaySP, type ContactChannel } from "./cadence";
+import { cadenceSteps, currentStep, historyLine, todaySP, type ContactChannel } from "./cadence";
 
 // Funil da prospecção ativa (diferente dos leads que chegam pelo site).
 export const prospectStatuses = [
@@ -284,9 +284,7 @@ export async function registerContact(id: number, channel: ContactChannel, by: s
 
   const isLast = step.key === cadenceSteps[cadenceSteps.length - 1].key;
   const next = step.daysToNext === null ? null : todaySP(step.daysToNext);
-  const [year, month, day] = todaySP().split("-");
-  const line = `${day}/${month}/${year} · ${channel} · ${step.label}${by ? ` · ${by}` : ""}`;
-  const notes = [prospect.notes, line].filter(Boolean).join("\n");
+  const notes = [prospect.notes, historyLine(channel, step, by)].filter(Boolean).join("\n");
   const status: ProspectStatus = isLast ? "perdido" : prospect.status === "novo" ? "contatado" : prospect.status;
 
   await (await db()).execute({

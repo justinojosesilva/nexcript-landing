@@ -9,14 +9,35 @@ export const cadenceSteps = [
   { key: "d9", label: "D+9 · falar com o decisor", daysToNext: 5 },
   { key: "d14", label: "Encerramento D+14", daysToNext: null },
 ] as const;
-export type CadenceStep = (typeof cadenceSteps)[number];
+
+/**
+ * Cadência dos leads do site: a pessoa já pediu o diagnóstico, então a
+ * resposta sai no mesmo dia e o ciclo é mais curto.
+ */
+export const leadCadenceSteps = [
+  { key: "l0", label: "1ª resposta", daysToNext: 1 },
+  { key: "l1", label: "Follow-up D+1", daysToNext: 2 },
+  { key: "l3", label: "Follow-up D+3", daysToNext: 4 },
+  { key: "l7", label: "Encerramento D+7", daysToNext: null },
+] as const;
+
+export type CadenceStep = (typeof cadenceSteps)[number] | (typeof leadCadenceSteps)[number];
 
 export const contactChannels = ["WhatsApp", "Visita", "Ligação", "Instagram", "E-mail"] as const;
 export type ContactChannel = (typeof contactChannels)[number];
 
 /** Próxima etapa da cadência, ou null quando ela já terminou. */
-export function currentStep(attempts: number): CadenceStep | null {
-  return cadenceSteps[attempts] ?? null;
+export function currentStep<T extends CadenceStep>(
+  attempts: number,
+  steps: readonly T[] = cadenceSteps as readonly CadenceStep[] as readonly T[],
+): T | null {
+  return steps[attempts] ?? null;
+}
+
+/** Linha de histórico acrescentada às anotações a cada contato registrado. */
+export function historyLine(channel: string, step: CadenceStep, by: string) {
+  const [year, month, day] = todaySP().split("-");
+  return `${day}/${month}/${year} · ${channel} · ${step.label}${by ? ` · ${by}` : ""}`;
 }
 
 /** Data de hoje (AAAA-MM-DD) no fuso de São Paulo. */

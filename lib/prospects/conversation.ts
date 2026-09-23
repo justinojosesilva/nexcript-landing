@@ -1,5 +1,5 @@
 import { todaySP } from "./cadence";
-import type { Prospect, ProspectStatus } from "./db";
+import type { Prospect } from "./db";
 import { hasKeywordName } from "./maps";
 import { findNiche, type Niche } from "./niches";
 
@@ -17,8 +17,8 @@ export type Reply = {
   answer: string;
   /** Orientação para quem conduz a conversa. */
   tip: string;
-  /** Status sugerido depois dessa troca. */
-  status: ProspectStatus;
+  /** Status sugerido depois dessa troca (prospect ou lead). */
+  status: string;
 };
 
 const groupDetails: Record<Niche["group"], { what: string; action: string; automation: string }> = {

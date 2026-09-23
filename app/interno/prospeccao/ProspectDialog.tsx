@@ -6,8 +6,8 @@ import { isMobile } from "@/lib/prospects/maps";
 import { buildMessage, visitScript, whatsappLink } from "@/lib/prospects/messages";
 import { findNiche } from "@/lib/prospects/niches";
 import { registerContactAction, saveProspect } from "./actions";
-import { CloseOnEscape } from "./CloseOnEscape";
-import { DialogTabs } from "./DialogTabs";
+import { CloseOnEscape } from "../_components/CloseOnEscape";
+import { DialogTabs } from "../_components/DialogTabs";
 import styles from "../panel.module.css";
 
 function hostOf(url: string) {
