@@ -220,3 +220,30 @@ export async function updateProspect(
     args: [status, owner, notes, id],
   });
 }
+
+/** Dados usados no score, para recalcular sem nova coleta. */
+export async function listForRescore() {
+  const result = await (await db()).execute(
+    "SELECT id, niche, reviews, rating, phone, website, score FROM prospects",
+  );
+  return result.rows.map((row) => ({
+    id: Number(row.id),
+    niche: String(row.niche),
+    reviews: row.reviews === null ? null : Number(row.reviews),
+    rating: row.rating === null ? null : Number(row.rating),
+    phone: row.phone ? String(row.phone) : null,
+    website: row.website ? String(row.website) : null,
+    score: Number(row.score),
+  }));
+}
+
+export async function updateScores(scores: { id: number; score: number; reasons: string }[]) {
+  if (scores.length === 0) return;
+  await (await db()).batch(
+    scores.map(({ id, score, reasons }) => ({
+      sql: "UPDATE prospects SET score = ?, score_reasons = ? WHERE id = ?",
+      args: [score, reasons, id],
+    })),
+    "write",
+  );
+}

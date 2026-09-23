@@ -49,8 +49,14 @@ Coleta empresas no Google Maps (Apify), filtra (aberta, sem site próprio, com t
 
 ```bash
 pnpm prospectar --nicho odontologia --cidade "Campinas, SP"
-pnpm prospectar --nicho todos --cidade "São Paulo, SP" --limite 10 --simular
+pnpm prospectar --nicho odontologia --bairros zona-sul --limite 10
+pnpm prospectar --nicho todos --bairros "Moema, Brooklin" --limite 5
+pnpm prospectar --recalcular
 ```
+
+- `--bairros` aceita uma região de São Paulo (`zona-sul`, `zona-oeste`, `zona-norte`, `zona-leste`, `centro`), `todas` ou bairros separados por vírgula. Lista em `lib/prospects/regions.ts`.
+- Antes de chamar o Apify, o script mostra o custo máximo estimado e exige `--confirmar` acima de US$ 0,50.
+- `--recalcular` refaz o score de tudo o que já está gravado, depois de mudar as regras.
 
 - Nichos e termos de busca: `lib/prospects/niches.ts`.
 - Regras de filtro e score: `lib/prospects/maps.ts`.

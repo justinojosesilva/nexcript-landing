@@ -49,7 +49,7 @@ export function isMobile(phone: string) {
 }
 
 const plain = (value?: string) =>
-  (value ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase();
+  (value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
 
 /** Visitável = cidade de São Paulo (capital), onde as visitas presenciais acontecem. */
 export function isVisitable(city?: string, state?: string) {
@@ -57,35 +57,55 @@ export function isVisitable(city?: string, state?: string) {
   return plain(city) === "sao paulo" && (st === "sp" || st === "sao paulo" || st === "");
 }
 
+export type ScoreInput = {
+  reviews: number | null;
+  rating: number | null;
+  phone: string | null;
+  website: string | null;
+  niche: Niche;
+};
+
 /**
- * Score de 0 a 100: negócio ativo (avaliações), reputação (nota),
- * facilidade de contato (celular = WhatsApp provável) e peso do nicho.
+ * Score de 0 a 100, em faixas largas para separar bem os primeiros da fila:
+ * negócio ativo (avaliações, até 35), reputação (nota, até 20), contato
+ * (celular = WhatsApp provável, até 20), nicho (até 15) e presença só em
+ * rede social (10). Também serve para recalcular prospects já gravados.
  */
-export function scorePlace(place: MapsPlace, phone: string, niche: Niche) {
+export function scoreProspect({ reviews, rating, phone, website, niche }: ScoreInput) {
   const reasons: string[] = [];
   let score = 0;
+  const add = (points: number, reason: string) => {
+    score += points;
+    reasons.push(`${reason} (+${points})`);
+  };
 
-  const reviews = place.reviewsCount ?? 0;
-  const reviewPoints =
-    reviews >= 100 ? 30 : reviews >= 50 ? 25 : reviews >= 20 ? 18 : reviews >= 10 ? 12 : 5;
-  score += reviewPoints;
-  reasons.push(`${reviews} avaliações (+${reviewPoints})`);
+  const r = reviews ?? 0;
+  add(
+    r >= 300 ? 35 : r >= 150 ? 30 : r >= 80 ? 25 : r >= 40 ? 20 : r >= 20 ? 14 : r >= 10 ? 9 : 4,
+    `${r} avaliações`,
+  );
 
-  const rating = place.totalScore ?? 0;
-  const ratingPoints = rating >= 4.7 ? 20 : rating >= 4.3 ? 15 : rating >= 4 ? 10 : 0;
-  score += ratingPoints;
-  reasons.push(`nota ${rating.toFixed(1)} (+${ratingPoints})`);
+  const n = rating ?? 0;
+  add(n >= 4.8 ? 20 : n >= 4.5 ? 16 : n >= 4.2 ? 12 : n >= 4 ? 8 : 0, `nota ${n.toFixed(1)}`);
 
-  const phonePoints = isMobile(phone) ? 20 : 8;
-  score += phonePoints;
-  reasons.push(`${isMobile(phone) ? "celular" : "telefone fixo"} (+${phonePoints})`);
+  if (phone) add(isMobile(phone) ? 20 : 8, isMobile(phone) ? "celular" : "telefone fixo");
 
-  const nichePoints = niche.weight * 3;
-  score += nichePoints;
-  reasons.push(`nicho ${niche.label} (+${nichePoints})`);
+  add(Math.round(niche.weight * 1.5), `nicho ${niche.label}`);
 
-  if (place.website) reasons.push("site é só rede social");
+  // Ativo nas redes, mas sem um endereço próprio para onde levar o cliente.
+  if (website) add(10, "só rede social");
+
   return { score: Math.min(100, score), reasons: reasons.join(" · ") };
+}
+
+/**
+ * Nome do Google com palavra-chave ("Dentista em Itaquera", "| Clínica"):
+ * alguém já trabalha o Google dessa empresa. Não muda o score, só é exibido.
+ */
+export function hasKeywordName(name: string) {
+  // Sufixos societários ("Ltda - ME") não contam como palavra-chave.
+  const clean = name.replace(/\s*-?\s*\b(ltda|me|epp|eireli|s\/?a)\b\.?/gi, "");
+  return /\s*[|–—]\s*|\s-\s?|\S-\s|\bem\s+\p{L}/iu.test(clean);
 }
 
 export function toProspect(
@@ -100,7 +120,13 @@ export function toProspect(
   if (!phone) return { rejected: "sem telefone" };
   if ((place.reviewsCount ?? 0) < minReviews) return { rejected: "poucas avaliações" };
 
-  const { score, reasons } = scorePlace(place, phone, niche);
+  const { score, reasons } = scoreProspect({
+    reviews: place.reviewsCount ?? null,
+    rating: place.totalScore ?? null,
+    phone,
+    website: place.website ?? null,
+    niche,
+  });
   return {
     prospect: {
       source: "maps",

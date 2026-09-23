@@ -12,6 +12,7 @@ import {
   type ProspectOwner,
   type ProspectStatus,
 } from "@/lib/prospects/db";
+import { hasKeywordName } from "@/lib/prospects/maps";
 import { findNiche, niches } from "@/lib/prospects/niches";
 import { saveProspect } from "./actions";
 import styles from "../panel.module.css";
@@ -125,6 +126,14 @@ export default async function ProspectingPage({
               <div className={styles.cardHead}>
                 <div>
                   <h2>{p.name}</h2>
+                  {hasKeywordName(p.name) && (
+                    <span
+                      className={styles.flag}
+                      title="O nome no Google tem palavra-chave: alguém já trabalha o Google dessa empresa."
+                    >
+                      nome com palavra-chave
+                    </span>
+                  )}
                   <p>
                     {findNiche(p.niche)?.label ?? p.niche}
                     {p.category && ` · ${p.category}`} ·{" "}
