@@ -1,4 +1,5 @@
 import { contactChannels, currentStep, formatDay } from "@/lib/prospects/cadence";
+import { conversationScript } from "@/lib/prospects/conversation";
 import { prospectOwners, prospectStatuses, type Prospect } from "@/lib/prospects/db";
 import { formatWhatsapp } from "@/lib/leads/origin";
 import { isMobile } from "@/lib/prospects/maps";
@@ -85,6 +86,74 @@ export function ProspectDialog({
             : "Todas as etapas foram registradas."}
         </p>
       )}
+    </>
+  );
+
+  const talk = conversationScript(p, sender);
+  const waButton = (text: string) =>
+    p.phone && (
+      <a
+        className={styles.secondary}
+        href={whatsappLink(p.phone, text)}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Abrir no WhatsApp
+      </a>
+    );
+
+  const conversation = (
+    <>
+      <h3>Quando responderem</h3>
+      <p className={styles.hint}>
+        Abra a situação que aconteceu, revise a resposta e envie. Objetivo da conversa: marcar os 20
+        minutos de diagnóstico, não vender por mensagem.
+      </p>
+      <div className={styles.accordion}>
+        {talk.replies.map((reply) => (
+          <details key={reply.trigger}>
+            <summary>{reply.trigger}</summary>
+            <p className={styles.messageBox}>{reply.answer}</p>
+            <div className={styles.actions}>
+              {waButton(reply.answer)}
+              <span className={styles.hint}>
+                {reply.tip} Status depois: <strong>{reply.status}</strong>.
+              </span>
+            </div>
+          </details>
+        ))}
+      </div>
+
+      <h3>Perguntas para entender o negócio</h3>
+      <p className={styles.hint}>
+        Use quando a conversa abrir, uma de cada vez. Anote as respostas no Acompanhamento.
+      </p>
+      <ol className={styles.script}>
+        {talk.qualifying.map((question) => (
+          <li key={question}>{question}</li>
+        ))}
+      </ol>
+
+      <h3>Convite para o diagnóstico</h3>
+      <p className={styles.messageBox}>{talk.invite}</p>
+      <div className={styles.actions}>{waButton(talk.invite)}</div>
+
+      <h3>Confirmação depois do aceite</h3>
+      <p className={styles.messageBox}>{talk.confirmation}</p>
+      <div className={styles.actions}>{waButton(talk.confirmation)}</div>
+
+      <h3>Depois da conversa</h3>
+      <ul className={styles.script}>
+        <li>
+          Mude o status para <strong>respondeu</strong> ou <strong>diagnóstico agendado</strong> no
+          Acompanhamento. Isso para a cadência automática.
+        </li>
+        <li>Anote o nome do responsável, as respostas das perguntas e a data combinada.</li>
+        <li>
+          No diagnóstico, guarde para o final (sem vender agora): {talk.automationHint}. É a porta
+          para a automação depois do site.
+        </li>
+      </ul>
     </>
   );
 
@@ -238,6 +307,9 @@ export function ProspectDialog({
             initial={closed ? "acompanhamento" : "contato"}
             tabs={[
               { id: "contato", label: "Próximo contato", content: nextContact },
+              ...(!closed
+                ? [{ id: "conversa", label: "Roteiro de conversa", content: conversation }]
+                : []),
               ...(p.visitable && !closed
                 ? [{ id: "visita", label: "Roteiro de visita", content: visit }]
                 : []),

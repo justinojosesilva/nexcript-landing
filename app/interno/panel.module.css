@@ -643,3 +643,51 @@
   font-size: 14px;
   font-weight: 800;
 }
+
+.messageBox {
+  white-space: pre-line;
+}
+
+.secondary {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--nx-ink);
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.secondary:hover {
+  background: var(--nx-ink);
+  color: #fff;
+}
+
+.accordion {
+  display: grid;
+  gap: 8px;
+}
+
+.accordion details {
+  border: 1px solid var(--nx-line);
+  border-radius: 6px;
+  background: #fffefa;
+}
+
+.accordion summary {
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.accordion details[open] summary {
+  border-bottom: 1px solid var(--nx-line);
+}
+
+.accordion details > :not(summary) {
+  margin: 12px 14px;
+}
+
+.tabPanel h3:not(:first-child) {
+  margin-top: 10px;
+}
