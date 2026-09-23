@@ -254,21 +254,28 @@ export function ProspectDialog({
                 {p.address ?? ([p.neighborhood, p.city, p.state].filter(Boolean).join(", ") || "—")}
               </dd>
             </div>
-            <div>
-              <dt>Google</dt>
-              <dd>
-                {p.rating !== null ? `★ ${p.rating.toFixed(1)}` : "sem nota"} · {p.reviews ?? 0}{" "}
-                avaliações
-                {p.mapsUrl && (
-                  <>
-                    {" · "}
-                    <a href={p.mapsUrl} target="_blank" rel="noopener noreferrer">
-                      ver no Maps
-                    </a>
-                  </>
-                )}
-              </dd>
-            </div>
+            {p.source === "cnpj" && p.openedAt ? (
+              <div>
+                <dt>Abertura</dt>
+                <dd>Aberta em {formatDay(p.openedAt)} (cadastro de CNPJ da Receita)</dd>
+              </div>
+            ) : (
+              <div>
+                <dt>Google</dt>
+                <dd>
+                  {p.rating !== null ? `★ ${p.rating.toFixed(1)}` : "sem nota"} · {p.reviews ?? 0}{" "}
+                  avaliações
+                  {p.mapsUrl && (
+                    <>
+                      {" · "}
+                      <a href={p.mapsUrl} target="_blank" rel="noopener noreferrer">
+                        ver no Maps
+                      </a>
+                    </>
+                  )}
+                </dd>
+              </div>
+            )}
             <div>
               <dt>Presença</dt>
               <dd>
@@ -297,7 +304,7 @@ export function ProspectDialog({
               <dt>Coletado</dt>
               <dd>
                 {dateTime.format(new Date(p.createdAt))} ·{" "}
-                {p.source === "maps" ? "Google Maps" : "CNPJ"}
+                {p.source === "maps" ? "Google Maps" : "Receita Federal (CNPJ)"}
               </dd>
             </div>
           </dl>

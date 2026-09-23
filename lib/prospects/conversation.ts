@@ -1,6 +1,7 @@
 import { todaySP } from "./cadence";
 import type { Prospect } from "./db";
 import { hasKeywordName } from "./maps";
+import { isNewCompany } from "./messages";
 import { findNiche, type Niche } from "./niches";
 
 /**
@@ -61,13 +62,15 @@ export function twoSuggestions(p: Prospect) {
 
   const first = `Um site próprio, simples e rápido no celular, com ${g.what} e um botão de WhatsApp com mensagem pronta. Quem chega pelo Google entende o que vocês fazem e já chega pronto para ${g.action}.`;
 
-  const second = p.website
-    ? "Trocar o link do Google, que hoje leva para a rede social, por esse endereço próprio. A rede social continua na bio e no site, mas quem pesquisa no Google encontra tudo organizado num lugar só."
-    : hasKeywordName(p.name)
-      ? "Aproveitar o trabalho que vocês já fazem no nome do Google: uma página para cada serviço principal ajuda a aparecer nas buscas da região e leva esse público para o lugar certo."
-      : reviews >= 20
-        ? `Levar as ${reviews} avaliações do Google para dentro do site, com as melhores em destaque. Hoje elas só aparecem no Maps, e é a prova que mais convence quem ainda não conhece vocês.`
-        : "Organizar o perfil do Google (fotos, horários e descrição) apontando para o site, para quem pesquisa na região encontrar vocês mais fácil.";
+  const second = isNewCompany(p)
+    ? "Criar e configurar o perfil de vocês no Google Maps (Perfil da Empresa), apontando para o site, para aparecerem nas buscas da região desde o início."
+    : p.website
+      ? "Trocar o link do Google, que hoje leva para a rede social, por esse endereço próprio. A rede social continua na bio e no site, mas quem pesquisa no Google encontra tudo organizado num lugar só."
+      : hasKeywordName(p.name)
+        ? "Aproveitar o trabalho que vocês já fazem no nome do Google: uma página para cada serviço principal ajuda a aparecer nas buscas da região e leva esse público para o lugar certo."
+        : reviews >= 20
+          ? `Levar as ${reviews} avaliações do Google para dentro do site, com as melhores em destaque. Hoje elas só aparecem no Maps, e é a prova que mais convence quem ainda não conhece vocês.`
+          : "Organizar o perfil do Google (fotos, horários e descrição) apontando para o site, para quem pesquisa na região encontrar vocês mais fácil.";
 
   return [first, second] as const;
 }
@@ -94,7 +97,7 @@ export function conversationScript(p: Prospect, sender: string) {
     },
     {
       trigger: "“Quem é você? Como achou a gente?”",
-      answer: `Sou ${sender}, da Nexcript. A gente cria sites para pequenas empresas, em São Paulo e em outras cidades. Encontrei vocês pesquisando no Google Maps e reparei que ${goodReputation ? "vocês têm ótimas avaliações, mas" : "vocês"} ainda não têm um site próprio para levar esse público. Posso te mandar duas ideias rápidas?`,
+      answer: `Sou ${sender}, da Nexcript. A gente cria sites para pequenas empresas, em São Paulo e em outras cidades. ${isNewCompany(p) ? "Vi no cadastro público de empresas que vocês abriram agora e ainda não têm um site, e esse começo é o melhor momento para montar isso." : `Encontrei vocês pesquisando no Google Maps e reparei que ${goodReputation ? "vocês têm ótimas avaliações, mas" : "vocês"} ainda não têm um site próprio para levar esse público.`} Posso te mandar duas ideias rápidas?`,
       tip: "Seja transparente sobre como encontrou a empresa. Isso gera confiança.",
       status: "respondeu",
     },

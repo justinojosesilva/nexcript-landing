@@ -30,6 +30,7 @@ type Search = {
   nicho?: string;
   status?: string;
   responsavel?: string;
+  origem?: string;
   pagina?: string;
   id?: string;
 };
@@ -45,22 +46,20 @@ function hrefWith(current: Search, change: Partial<Search>) {
 function nextAction(p: Prospect) {
   if (!p.nextActionAt) return null;
   const today = todaySP();
-  if (p.nextActionAt < today) return { label: `Atrasado · ${formatDay(p.nextActionAt)}`, tone: "late" };
+  if (p.nextActionAt < today)
+    return { label: `Atrasado · ${formatDay(p.nextActionAt)}`, tone: "late" };
   if (p.nextActionAt === today) return { label: "Contato hoje", tone: "today" };
   return { label: `Próximo · ${formatDay(p.nextActionAt)}`, tone: "later" };
 }
 
-export default async function ProspectingPage({
-  searchParams,
-}: {
-  searchParams: Promise<Search>;
-}) {
+export default async function ProspectingPage({ searchParams }: { searchParams: Promise<Search> }) {
   if (!isAuthorized((await headers()).get("authorization"))) notFound();
 
   const search = await searchParams;
   const filters: ProspectFilters = {
     visitable: search.tipo === "visitavel" ? true : search.tipo === "remoto" ? false : undefined,
     due: search.tipo === "hoje",
+    source: search.origem === "maps" || search.origem === "cnpj" ? search.origem : undefined,
     niche: findNiche(search.nicho ?? "")?.id,
     status: prospectStatuses.find((s) => s === search.status) as ProspectStatus | undefined,
     owner:
@@ -145,6 +144,14 @@ export default async function ProspectingPage({
             ))}
           </select>
         </label>
+        <label>
+          Origem
+          <select name="origem" defaultValue={filters.source ?? ""}>
+            <option value="">Todas</option>
+            <option value="maps">Google Maps</option>
+            <option value="cnpj">CNPJ recém-aberto</option>
+          </select>
+        </label>
         <button type="submit">Filtrar</button>
       </form>
 
@@ -173,8 +180,9 @@ export default async function ProspectingPage({
                     {findNiche(p.niche)?.label ?? p.niche} · {p.neighborhood ?? p.city ?? "—"}
                   </p>
                   <p className={styles.compactMeta}>
-                    {p.rating !== null ? `★ ${p.rating.toFixed(1)}` : "sem nota"} · {p.reviews ?? 0}{" "}
-                    avaliações
+                    {p.source === "cnpj" && p.openedAt
+                      ? `Aberta em ${formatDay(p.openedAt)} · ${p.state}`
+                      : `${p.rating !== null ? `★ ${p.rating.toFixed(1)}` : "sem nota"} · ${p.reviews ?? 0} avaliações`}
                   </p>
                   <div className={styles.chips}>
                     <span className={styles.chip} data-status={p.status}>
@@ -212,7 +220,9 @@ export default async function ProspectingPage({
         </nav>
       )}
 
-      {detail && <ProspectDialog prospect={detail} closeHref={hrefWith(search, { id: undefined })} />}
+      {detail && (
+        <ProspectDialog prospect={detail} closeHref={hrefWith(search, { id: undefined })} />
+      )}
     </div>
   );
 }

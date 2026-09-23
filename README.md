@@ -62,3 +62,18 @@ pnpm prospectar --recalcular
 - Regras de filtro e score: `lib/prospects/maps.ts`.
 - Teste sem Apify: `pnpm prospectar --nicho odontologia --arquivo scripts/exemplos/maps-exemplo.json --simular`.
 - Chaves no `.env.local`: `APIFY_TOKEN`, `TURSO_DATABASE_URL` e `TURSO_AUTH_TOKEN`.
+
+### Empresas recém-abertas (CNPJ)
+
+Lê os dados abertos de CNPJ da Receita Federal (compartilhamento público do SERPRO, atualizado todo mês) em streaming: cerca de 5,4 GB passam pela rede, nada é gravado em disco. Filtra empresas **ativas**, abertas nos últimos 60 dias, com CNAE do combo de nichos, nas cidades de `cnpjCities` (`lib/prospects/regions.ts`) e com telefone. Grava na mesma tabela `prospects`, com origem `cnpj`.
+
+```bash
+pnpm prospectar:cnpj --simular          # todos os arquivos, sem gravar (~15 min)
+pnpm prospectar:cnpj                    # grava as empresas com nome fantasia
+pnpm prospectar:cnpj --dias 30 --nicho odontologia --cidades "SAO PAULO/SP"
+```
+
+- Por padrão, só entram empresas **com nome fantasia**. Sem nome fantasia (quase sempre MEI), a razão social é nome e CPF de pessoa física e não é guardada; `--incluir-sem-nome` grava essas empresas com um nome descritivo.
+- Guarda só o necessário para a abordagem: nome fantasia, telefone, endereço comercial, cidade, nicho e data de abertura.
+- As mensagens do painel usam a abertura recente como "momento" ("vi no cadastro público de empresas que vocês abriram agora em setembro…").
+- Requer `bsdtar` (nativo no macOS) para descompactar em streaming.

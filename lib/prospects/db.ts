@@ -94,40 +94,44 @@ const db = schemaOnce([
 export async function insertProspects(prospects: NewProspect[]) {
   const client = await db();
   let inserted = 0;
-  for (const p of prospects) {
-    const result = await client.execute({
-      sql: `INSERT INTO prospects (source, external_id, name, niche, category, phone, website,
-              address, neighborhood, city, state, visitable, rating, reviews, opened_at,
-              maps_url, score, score_reasons)
-            SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-            WHERE NOT EXISTS (
-              SELECT 1 FROM prospects WHERE external_id = ? OR (? IS NOT NULL AND phone = ?)
-            )`,
-      args: [
-        p.source,
-        p.externalId,
-        p.name,
-        p.niche,
-        p.category,
-        p.phone,
-        p.website,
-        p.address,
-        p.neighborhood,
-        p.city,
-        p.state,
-        p.visitable ? 1 : 0,
-        p.rating,
-        p.reviews,
-        p.openedAt,
-        p.mapsUrl,
-        p.score,
-        p.scoreReasons,
-        p.externalId,
-        p.phone,
-        p.phone,
-      ],
-    });
-    inserted += result.rowsAffected;
+  // Em lotes: uma coleta de CNPJ pode trazer milhares de linhas.
+  for (let i = 0; i < prospects.length; i += 100) {
+    const results = await client.batch(
+      prospects.slice(i, i + 100).map((p) => ({
+        sql: `INSERT INTO prospects (source, external_id, name, niche, category, phone, website,
+                address, neighborhood, city, state, visitable, rating, reviews, opened_at,
+                maps_url, score, score_reasons)
+              SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+              WHERE NOT EXISTS (
+                SELECT 1 FROM prospects WHERE external_id = ? OR (? IS NOT NULL AND phone = ?)
+              )`,
+        args: [
+          p.source,
+          p.externalId,
+          p.name,
+          p.niche,
+          p.category,
+          p.phone,
+          p.website,
+          p.address,
+          p.neighborhood,
+          p.city,
+          p.state,
+          p.visitable ? 1 : 0,
+          p.rating,
+          p.reviews,
+          p.openedAt,
+          p.mapsUrl,
+          p.score,
+          p.scoreReasons,
+          p.externalId,
+          p.phone,
+          p.phone,
+        ],
+      })),
+      "write",
+    );
+    inserted += results.reduce((sum, r) => sum + r.rowsAffected, 0);
   }
   return inserted;
 }
@@ -137,6 +141,7 @@ export type ProspectFilters = {
   niche?: string;
   status?: ProspectStatus;
   owner?: ProspectOwner | "sem responsável";
+  source?: NewProspect["source"];
   /** Só os que têm contato agendado para hoje ou atrasado. */
   due?: boolean;
 };
@@ -166,6 +171,10 @@ function whereClause(filters: ProspectFilters) {
   } else if (filters.owner) {
     where.push("owner = ?");
     args.push(filters.owner);
+  }
+  if (filters.source) {
+    where.push("source = ?");
+    args.push(filters.source);
   }
   if (filters.due) {
     where.push("next_action_at IS NOT NULL AND next_action_at <= ?");
@@ -300,10 +309,12 @@ export async function registerContact(id: number, channel: ContactChannel, by: s
 /** Dados usados no score, para recalcular sem nova coleta. */
 export async function listForRescore() {
   const result = await (await db()).execute(
-    "SELECT id, name, status, niche, reviews, rating, phone, website, score FROM prospects",
+    "SELECT id, source, name, status, niche, reviews, rating, phone, website, opened_at, score FROM prospects",
   );
   return result.rows.map((row) => ({
     id: Number(row.id),
+    source: String(row.source) as NewProspect["source"],
+    openedAt: row.opened_at ? String(row.opened_at) : null,
     name: String(row.name),
     status: String(row.status) as ProspectStatus,
     niche: String(row.niche),

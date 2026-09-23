@@ -39,6 +39,8 @@ import {
   type MapsPlace,
   type RejectReason,
 } from "../lib/prospects/maps";
+import { scoreNewCompany } from "../lib/prospects/cnpj";
+import { isPlaceholderName } from "../lib/prospects/messages";
 import { findNiche, niches, type Niche } from "../lib/prospects/niches";
 import { resolveNeighborhoods } from "../lib/prospects/regions";
 
@@ -77,7 +79,16 @@ async function rescore() {
   const updates = rows.flatMap((row) => {
     const niche = findNiche(row.niche);
     if (!niche) return [];
-    const { score, reasons } = scoreProspect({ ...row, niche });
+    // Empresas do CNPJ têm score próprio, que cai conforme a abertura fica antiga.
+    const { score, reasons } =
+      row.source === "cnpj" && row.openedAt
+        ? scoreNewCompany({
+            openedAt: row.openedAt,
+            phone: row.phone,
+            niche,
+            tradeName: !isPlaceholderName(row.name),
+          })
+        : scoreProspect({ ...row, niche });
     return [{ id: row.id, score, reasons, before: row.score }];
   });
   await updateScores(updates);
@@ -91,7 +102,9 @@ async function rescore() {
     "Rede/franquia: descartado automaticamente.",
   );
   if (chains.length) {
-    console.log(`✔ ${chains.length} redes/franquias descartadas: ${chains.map((c) => c.name).join("; ")}`);
+    console.log(
+      `✔ ${chains.length} redes/franquias descartadas: ${chains.map((c) => c.name).join("; ")}`,
+    );
   }
 }
 
@@ -121,7 +134,9 @@ async function collect() {
       `Plano: ${selectedNiches.length} nicho(s) × ${locations.length} local(is) · até ${maxPlaces} lugares · custo máximo estimado US$ ${estimate.toFixed(2)}`,
     );
     if (estimate > CONFIRM_ABOVE_USD && !values.confirmar) {
-      fail(`Estimativa acima de US$ ${CONFIRM_ABOVE_USD.toFixed(2)}. Repita com --confirmar para rodar.`);
+      fail(
+        `Estimativa acima de US$ ${CONFIRM_ABOVE_USD.toFixed(2)}. Repita com --confirmar para rodar.`,
+      );
     }
   }
 
