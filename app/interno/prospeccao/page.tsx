@@ -2,26 +2,37 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { isAuthorized } from "@/lib/internal/auth";
-import { formatWhatsapp } from "@/lib/leads/origin";
+import { formatDay, todaySP } from "@/lib/prospects/cadence";
 import {
+  getProspect,
   listProspects,
   prospectOwners,
   prospectStatuses,
   prospectSummary,
+  type Prospect,
   type ProspectFilters,
   type ProspectOwner,
   type ProspectStatus,
 } from "@/lib/prospects/db";
-import { hasKeywordName } from "@/lib/prospects/maps";
+import { shortName } from "@/lib/prospects/messages";
 import { findNiche, niches } from "@/lib/prospects/niches";
-import { saveProspect } from "./actions";
+import { ProspectDialog } from "./ProspectDialog";
 import styles from "../panel.module.css";
 
 export const metadata: Metadata = {
   title: "Prospecção | Nexcript interno",
 };
 
-type Search = { tipo?: string; nicho?: string; status?: string; responsavel?: string };
+const PAGE_SIZE = 24;
+
+type Search = {
+  tipo?: string;
+  nicho?: string;
+  status?: string;
+  responsavel?: string;
+  pagina?: string;
+  id?: string;
+};
 
 function hrefWith(current: Search, change: Partial<Search>) {
   const params = new URLSearchParams(
@@ -29,6 +40,14 @@ function hrefWith(current: Search, change: Partial<Search>) {
   );
   const query = params.toString();
   return `/interno/prospeccao${query ? `?${query}` : ""}`;
+}
+
+function nextAction(p: Prospect) {
+  if (!p.nextActionAt) return null;
+  const today = todaySP();
+  if (p.nextActionAt < today) return { label: `Atrasado · ${formatDay(p.nextActionAt)}`, tone: "late" };
+  if (p.nextActionAt === today) return { label: "Contato hoje", tone: "today" };
+  return { label: `Próximo · ${formatDay(p.nextActionAt)}`, tone: "later" };
 }
 
 export default async function ProspectingPage({
@@ -41,6 +60,7 @@ export default async function ProspectingPage({
   const search = await searchParams;
   const filters: ProspectFilters = {
     visitable: search.tipo === "visitavel" ? true : search.tipo === "remoto" ? false : undefined,
+    due: search.tipo === "hoje",
     niche: findNiche(search.nicho ?? "")?.id,
     status: prospectStatuses.find((s) => s === search.status) as ProspectStatus | undefined,
     owner:
@@ -48,10 +68,21 @@ export default async function ProspectingPage({
         ? "sem responsável"
         : (prospectOwners.find((o) => o === search.responsavel) as ProspectOwner | undefined),
   };
-  const [prospects, summary] = await Promise.all([listProspects(filters), prospectSummary()]);
+  const page = Math.max(1, Number.parseInt(search.pagina ?? "1", 10) || 1);
+  const detailId = Number(search.id);
 
+  const [{ prospects, total }, summary, detail] = await Promise.all([
+    listProspects(filters, page, PAGE_SIZE),
+    prospectSummary(),
+    Number.isInteger(detailId) && detailId > 0 ? getProspect(detailId) : null,
+  ]);
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  // Mudar de aba ou filtro volta para a página 1 e fecha o detalhe.
+  const listSearch: Search = { ...search, id: undefined };
   const tabs = [
     { tipo: undefined, label: "Todos", count: summary.total },
+    { tipo: "hoje", label: "Para hoje", count: summary.due },
     { tipo: "visitavel", label: "Visitáveis (São Paulo)", count: summary.visitable },
     { tipo: "remoto", label: "Remotos", count: summary.remote },
   ];
@@ -64,7 +95,8 @@ export default async function ProspectingPage({
           <h1>Prospecção</h1>
         </div>
         <p className={styles.summary}>
-          {summary.total} empresas em aberto · ordenadas pelo score
+          {total} {total === 1 ? "empresa" : "empresas"} neste filtro ·{" "}
+          {search.tipo === "hoje" ? "mais atrasados primeiro" : "ordenadas pelo score"}
         </p>
       </header>
 
@@ -72,8 +104,9 @@ export default async function ProspectingPage({
         {tabs.map((tab) => (
           <a
             key={tab.label}
-            href={hrefWith(search, { tipo: tab.tipo })}
+            href={hrefWith(listSearch, { tipo: tab.tipo, pagina: undefined })}
             aria-current={search.tipo === tab.tipo ? "page" : undefined}
+            data-alert={tab.tipo === "hoje" && tab.count > 0 ? "" : undefined}
           >
             {tab.label} <span>{tab.count}</span>
           </a>
@@ -117,120 +150,69 @@ export default async function ProspectingPage({
 
       {prospects.length === 0 ? (
         <p className={styles.empty}>
-          Nenhuma empresa com esses filtros. Rode <code>pnpm prospectar</code> para coletar.
+          {search.tipo === "hoje"
+            ? "Nenhum contato agendado para hoje."
+            : "Nenhuma empresa com esses filtros. Rode pnpm prospectar para coletar."}
         </p>
       ) : (
-        <ul className={styles.list}>
-          {prospects.map((p) => (
-            <li key={p.id} className={styles.card}>
-              <div className={styles.cardHead}>
-                <div>
-                  <h2>{p.name}</h2>
-                  {hasKeywordName(p.name) && (
-                    <span
-                      className={styles.flag}
-                      title="O nome no Google tem palavra-chave: alguém já trabalha o Google dessa empresa."
-                    >
-                      nome com palavra-chave
-                    </span>
-                  )}
-                  <p>
-                    {findNiche(p.niche)?.label ?? p.niche}
-                    {p.category && ` · ${p.category}`} ·{" "}
-                    {[p.neighborhood, p.city, p.state].filter(Boolean).join(", ")}
+        <ul className={styles.grid}>
+          {prospects.map((p) => {
+            const action = nextAction(p);
+            return (
+              <li key={p.id}>
+                <a
+                  href={hrefWith(search, { id: String(p.id) })}
+                  className={styles.compact}
+                  aria-current={detail?.id === p.id ? "true" : undefined}
+                >
+                  <div className={styles.compactHead}>
+                    <h2 title={p.name}>{shortName(p.name)}</h2>
+                    <span className={styles.scoreSmall}>{p.score}</span>
+                  </div>
+                  <p className={styles.compactMeta}>
+                    {findNiche(p.niche)?.label ?? p.niche} · {p.neighborhood ?? p.city ?? "—"}
                   </p>
-                </div>
-                <span className={styles.score} title={p.scoreReasons}>
-                  {p.score}
-                </span>
-              </div>
-
-              <dl className={styles.details}>
-                <div>
-                  <dt>Telefone</dt>
-                  <dd>
-                    {p.phone ? (
-                      <a href={`https://wa.me/${p.phone}`} target="_blank" rel="noopener noreferrer">
-                        {formatWhatsapp(p.phone)}
-                      </a>
-                    ) : (
-                      "—"
+                  <p className={styles.compactMeta}>
+                    {p.rating !== null ? `★ ${p.rating.toFixed(1)}` : "sem nota"} · {p.reviews ?? 0}{" "}
+                    avaliações
+                  </p>
+                  <div className={styles.chips}>
+                    <span className={styles.chip} data-status={p.status}>
+                      {p.status}
+                    </span>
+                    {p.owner && <span className={styles.chip}>{p.owner}</span>}
+                    {action && (
+                      <span className={styles.chip} data-tone={action.tone}>
+                        {action.label}
+                      </span>
                     )}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Google</dt>
-                  <dd>
-                    {p.rating !== null ? `★ ${p.rating.toFixed(1)}` : "—"} · {p.reviews ?? 0} avaliações
-                  </dd>
-                </div>
-                <div>
-                  <dt>Presença</dt>
-                  <dd>
-                    {p.website ? (
-                      <a href={p.website} target="_blank" rel="noopener noreferrer">
-                        só rede social
-                      </a>
-                    ) : (
-                      "sem site"
-                    )}
-                    {p.mapsUrl && (
-                      <>
-                        {" · "}
-                        <a href={p.mapsUrl} target="_blank" rel="noopener noreferrer">
-                          ver no Maps
-                        </a>
-                      </>
-                    )}
-                  </dd>
-                </div>
-                <div>
-                  <dt>Contato</dt>
-                  <dd>{p.visitable ? "Visitável (SP)" : "Remoto"}</dd>
-                </div>
-              </dl>
-
-              <p className={styles.reasons}>{p.scoreReasons}</p>
-
-              {/* A key recria o formulário após salvar, com os valores atualizados. */}
-              <form
-                key={`${p.status}-${p.owner ?? ""}-${p.notes ?? ""}`}
-                action={saveProspect}
-                className={styles.form}
-              >
-                <input type="hidden" name="id" value={p.id} />
-                <label>
-                  Status
-                  <select name="status" defaultValue={p.status}>
-                    {prospectStatuses.map((s) => (
-                      <option key={s}>{s}</option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Responsável
-                  <select name="owner" defaultValue={p.owner ?? ""}>
-                    <option value="">—</option>
-                    {prospectOwners.map((o) => (
-                      <option key={o}>{o}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className={styles.notes}>
-                  Anotações
-                  <textarea
-                    name="notes"
-                    rows={2}
-                    defaultValue={p.notes ?? ""}
-                    placeholder="Observação específica, próxima ação, data..."
-                  />
-                </label>
-                <button type="submit">Salvar</button>
-              </form>
-            </li>
-          ))}
+                  </div>
+                </a>
+              </li>
+            );
+          })}
         </ul>
       )}
+
+      {pages > 1 && (
+        <nav className={styles.pagination} aria-label="Páginas">
+          {page > 1 ? (
+            <a href={hrefWith(listSearch, { pagina: String(page - 1) })}>← Anterior</a>
+          ) : (
+            <span aria-disabled="true">← Anterior</span>
+          )}
+          <span>
+            Página {page} de {pages}
+          </span>
+          {page < pages ? (
+            <a href={hrefWith(listSearch, { pagina: String(page + 1) })}>Próxima →</a>
+          ) : (
+            <span aria-disabled="true">Próxima →</span>
+          )}
+        </nav>
+      )}
+
+      {detail && <ProspectDialog prospect={detail} closeHref={hrefWith(search, { id: undefined })} />}
     </div>
   );
 }

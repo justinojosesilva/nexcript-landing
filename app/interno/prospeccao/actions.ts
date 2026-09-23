@@ -3,9 +3,11 @@
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { isAuthorized } from "@/lib/internal/auth";
+import { contactChannels, type ContactChannel } from "@/lib/prospects/cadence";
 import {
   prospectOwners,
   prospectStatuses,
+  registerContact,
   updateProspect,
   type ProspectOwner,
   type ProspectStatus,
@@ -28,5 +30,19 @@ export async function saveProspect(formData: FormData) {
   if (!Number.isInteger(id) || !prospectStatuses.includes(status)) return;
 
   await updateProspect(id, status, owner, notes);
+  revalidatePath("/interno/prospeccao");
+}
+
+export async function registerContactAction(formData: FormData) {
+  if (!isAuthorized((await headers()).get("authorization"))) {
+    throw new Error("Não autorizado.");
+  }
+
+  const id = Number(formData.get("id"));
+  const channel = formData.get("channel") as ContactChannel;
+  const by = String(formData.get("by") ?? "").slice(0, 40);
+  if (!Number.isInteger(id) || !contactChannels.includes(channel)) return;
+
+  await registerContact(id, channel, by);
   revalidatePath("/interno/prospeccao");
 }

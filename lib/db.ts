@@ -17,12 +17,27 @@ export function getClient(): Client {
   return client;
 }
 
-/** Cria as tabelas uma única vez por instância; tenta de novo se falhar. */
-export function schemaOnce(statements: string[]) {
+/**
+ * Cria as tabelas uma única vez por instância; tenta de novo se falhar.
+ * `columns` adiciona colunas novas a tabelas que já existem em produção.
+ */
+export function schemaOnce(
+  statements: string[],
+  columns: { table: string; name: string; definition: string }[] = [],
+) {
   let ready: Promise<unknown> | null = null;
   return async (): Promise<Client> => {
     const db = getClient();
-    ready ??= db.batch(statements, "write").catch((error) => {
+    ready ??= (async () => {
+      await db.batch(statements, "write");
+      for (const table of new Set(columns.map((c) => c.table))) {
+        const info = await db.execute(`PRAGMA table_info(${table})`);
+        const existing = new Set(info.rows.map((row) => String(row.name)));
+        for (const column of columns.filter((c) => c.table === table && !existing.has(c.name))) {
+          await db.execute(`ALTER TABLE ${table} ADD COLUMN ${column.name} ${column.definition}`);
+        }
+      }
+    })().catch((error) => {
       ready = null;
       throw error;
     });

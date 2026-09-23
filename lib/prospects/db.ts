@@ -1,4 +1,6 @@
+import type { Row } from "@libsql/client";
 import { schemaOnce } from "../db";
+import { cadenceSteps, currentStep, todaySP, type ContactChannel } from "./cadence";
 
 // Funil da prospecção ativa (diferente dos leads que chegam pelo site).
 export const prospectStatuses = [
@@ -44,6 +46,9 @@ export type Prospect = NewProspect & {
   status: ProspectStatus;
   owner: ProspectOwner | null;
   notes: string | null;
+  contactAttempts: number;
+  lastContactAt: string | null;
+  nextActionAt: string | null;
 };
 
 const db = schemaOnce([
@@ -75,6 +80,11 @@ const db = schemaOnce([
   )`,
   "CREATE INDEX IF NOT EXISTS prospects_score ON prospects (score DESC)",
   "CREATE INDEX IF NOT EXISTS prospects_phone ON prospects (phone)",
+], [
+  // Cadência de contato (Frente 3), adicionadas depois da tabela existir.
+  { table: "prospects", name: "contact_attempts", definition: "INTEGER NOT NULL DEFAULT 0" },
+  { table: "prospects", name: "last_contact_at", definition: "TEXT" },
+  { table: "prospects", name: "next_action_at", definition: "TEXT" },
 ]);
 
 /**
@@ -127,9 +137,13 @@ export type ProspectFilters = {
   niche?: string;
   status?: ProspectStatus;
   owner?: ProspectOwner | "sem responsável";
+  /** Só os que têm contato agendado para hoje ou atrasado. */
+  due?: boolean;
 };
 
-export async function listProspects(filters: ProspectFilters, limit = 200) {
+const OPEN = "status NOT IN ('ganho', 'perdido', 'descartado')";
+
+function whereClause(filters: ProspectFilters) {
   const where: string[] = [];
   const args: (string | number)[] = [];
   if (filters.visitable !== undefined) {
@@ -145,7 +159,7 @@ export async function listProspects(filters: ProspectFilters, limit = 200) {
     args.push(filters.status);
   } else {
     // Sem filtro de status, esconde o que já foi encerrado.
-    where.push("status NOT IN ('ganho', 'perdido', 'descartado')");
+    where.push(OPEN);
   }
   if (filters.owner === "sem responsável") {
     where.push("owner IS NULL");
@@ -153,48 +167,81 @@ export async function listProspects(filters: ProspectFilters, limit = 200) {
     where.push("owner = ?");
     args.push(filters.owner);
   }
+  if (filters.due) {
+    where.push("next_action_at IS NOT NULL AND next_action_at <= ?");
+    args.push(todaySP());
+  }
+  return { sql: where.length ? `WHERE ${where.join(" AND ")}` : "", args };
+}
 
-  const result = await (await db()).execute({
-    sql: `SELECT * FROM prospects ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
-          ORDER BY score DESC, reviews DESC LIMIT ${limit}`,
-    args,
-  });
-  return result.rows.map(
-    (row): Prospect => ({
-      id: Number(row.id),
-      createdAt: String(row.created_at),
-      source: String(row.source) as Prospect["source"],
-      externalId: String(row.external_id),
-      name: String(row.name),
-      niche: String(row.niche),
-      category: row.category ? String(row.category) : null,
-      phone: row.phone ? String(row.phone) : null,
-      website: row.website ? String(row.website) : null,
-      address: row.address ? String(row.address) : null,
-      neighborhood: row.neighborhood ? String(row.neighborhood) : null,
-      city: row.city ? String(row.city) : null,
-      state: row.state ? String(row.state) : null,
-      visitable: Number(row.visitable) === 1,
-      rating: row.rating === null ? null : Number(row.rating),
-      reviews: row.reviews === null ? null : Number(row.reviews),
-      openedAt: row.opened_at ? String(row.opened_at) : null,
-      mapsUrl: row.maps_url ? String(row.maps_url) : null,
-      score: Number(row.score),
-      scoreReasons: row.score_reasons ? String(row.score_reasons) : "",
-      status: String(row.status) as ProspectStatus,
-      owner: row.owner ? (String(row.owner) as ProspectOwner) : null,
-      notes: row.notes ? String(row.notes) : null,
+function toProspectRow(row: Row): Prospect {
+  return {
+    id: Number(row.id),
+    createdAt: String(row.created_at),
+    source: String(row.source) as Prospect["source"],
+    externalId: String(row.external_id),
+    name: String(row.name),
+    niche: String(row.niche),
+    category: row.category ? String(row.category) : null,
+    phone: row.phone ? String(row.phone) : null,
+    website: row.website ? String(row.website) : null,
+    address: row.address ? String(row.address) : null,
+    neighborhood: row.neighborhood ? String(row.neighborhood) : null,
+    city: row.city ? String(row.city) : null,
+    state: row.state ? String(row.state) : null,
+    visitable: Number(row.visitable) === 1,
+    rating: row.rating === null ? null : Number(row.rating),
+    reviews: row.reviews === null ? null : Number(row.reviews),
+    openedAt: row.opened_at ? String(row.opened_at) : null,
+    mapsUrl: row.maps_url ? String(row.maps_url) : null,
+    score: Number(row.score),
+    scoreReasons: row.score_reasons ? String(row.score_reasons) : "",
+    status: String(row.status) as ProspectStatus,
+    owner: row.owner ? (String(row.owner) as ProspectOwner) : null,
+    notes: row.notes ? String(row.notes) : null,
+    contactAttempts: Number(row.contact_attempts ?? 0),
+    lastContactAt: row.last_contact_at ? String(row.last_contact_at) : null,
+    nextActionAt: row.next_action_at ? String(row.next_action_at) : null,
+  };
+}
+
+export async function listProspects(filters: ProspectFilters, page = 1, pageSize = 24) {
+  const where = whereClause(filters);
+  const client = await db();
+  const [rows, count] = await Promise.all([
+    client.execute({
+      // Na aba "Para hoje", os mais atrasados primeiro; nas demais, o score.
+      sql: `SELECT * FROM prospects ${where.sql}
+            ORDER BY ${filters.due ? "next_action_at ASC, " : ""}score DESC, reviews DESC
+            LIMIT ? OFFSET ?`,
+      args: [...where.args, pageSize, (page - 1) * pageSize],
     }),
-  );
+    client.execute({ sql: `SELECT COUNT(*) AS total FROM prospects ${where.sql}`, args: where.args }),
+  ]);
+  return { prospects: rows.rows.map(toProspectRow), total: Number(count.rows[0].total) };
+}
+
+export async function getProspect(id: number) {
+  const result = await (await db()).execute({
+    sql: "SELECT * FROM prospects WHERE id = ?",
+    args: [id],
+  });
+  return result.rows[0] ? toProspectRow(result.rows[0]) : null;
 }
 
 /** Totais para os filtros do painel (somente prospects em aberto). */
 export async function prospectSummary() {
-  const result = await (await db()).execute(
-    `SELECT niche, visitable, COUNT(*) AS total FROM prospects
-     WHERE status NOT IN ('ganho', 'perdido', 'descartado')
-     GROUP BY niche, visitable`,
-  );
+  const client = await db();
+  const [result, due] = await Promise.all([
+    client.execute(
+      `SELECT niche, visitable, COUNT(*) AS total FROM prospects WHERE ${OPEN} GROUP BY niche, visitable`,
+    ),
+    client.execute({
+      sql: `SELECT COUNT(*) AS total FROM prospects
+            WHERE ${OPEN} AND next_action_at IS NOT NULL AND next_action_at <= ?`,
+      args: [todaySP()],
+    }),
+  ]);
   const byNiche: Record<string, number> = {};
   let visitable = 0;
   let remote = 0;
@@ -204,7 +251,7 @@ export async function prospectSummary() {
     if (Number(row.visitable) === 1) visitable += total;
     else remote += total;
   }
-  return { byNiche, visitable, remote, total: visitable + remote };
+  return { byNiche, visitable, remote, total: visitable + remote, due: Number(due.rows[0].total) };
 }
 
 export async function updateProspect(
@@ -213,11 +260,42 @@ export async function updateProspect(
   owner: ProspectOwner | null,
   notes: string | null,
 ) {
+  // Depois da resposta (ou do encerramento), a cadência automática para.
+  const keepCadence = status === "novo" || status === "contatado";
   await (await db()).execute({
     sql: `UPDATE prospects SET status = ?, owner = ?, notes = ?,
+            next_action_at = CASE WHEN ? THEN next_action_at ELSE NULL END,
             updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
           WHERE id = ?`,
-    args: [status, owner, notes, id],
+    args: [status, owner, notes, keepCadence ? 1 : 0, id],
+  });
+}
+
+/**
+ * Registra um contato feito: avança a etapa da cadência, agenda o próximo
+ * contato e acrescenta uma linha de histórico às anotações. Na última etapa,
+ * encerra como "perdido" (sem resposta), conforme o Playbook.
+ */
+export async function registerContact(id: number, channel: ContactChannel, by: string) {
+  const prospect = await getProspect(id);
+  if (!prospect) return;
+  const step = currentStep(prospect.contactAttempts);
+  if (!step) return;
+
+  const isLast = step.key === cadenceSteps[cadenceSteps.length - 1].key;
+  const next = step.daysToNext === null ? null : todaySP(step.daysToNext);
+  const [year, month, day] = todaySP().split("-");
+  const line = `${day}/${month}/${year} · ${channel} · ${step.label}${by ? ` · ${by}` : ""}`;
+  const notes = [prospect.notes, line].filter(Boolean).join("\n");
+  const status: ProspectStatus = isLast ? "perdido" : prospect.status === "novo" ? "contatado" : prospect.status;
+
+  await (await db()).execute({
+    sql: `UPDATE prospects SET contact_attempts = contact_attempts + 1,
+            last_contact_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
+            next_action_at = ?, status = ?, notes = ?,
+            updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+          WHERE id = ?`,
+    args: [next, status, isLast ? `${notes}\nSem resposta após a cadência.` : notes, id],
   });
 }
 
