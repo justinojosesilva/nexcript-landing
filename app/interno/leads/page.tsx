@@ -9,7 +9,6 @@ import styles from "./leads.module.css";
 
 export const metadata: Metadata = {
   title: "Leads | Nexcript interno",
-  robots: { index: false, follow: false },
 };
 
 const dateFormat = new Intl.DateTimeFormat("pt-BR", {

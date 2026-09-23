@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Manrope, Syne, JetBrains_Mono } from "next/font/google";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
 import { OrganizationJsonLd } from "@/seo/JsonLd";
 import { createMetadata } from "@/seo/metadata";
 import { siteConfig } from "@/starter.config";
@@ -40,11 +38,7 @@ export default function RootLayout({
     >
       <body className="min-h-dvh flex flex-col">
         <OrganizationJsonLd site={siteConfig} />
-        <Navbar />
-        <main className="flex-1" id="principal">
-          {children}
-        </main>
-        <Footer />
+        {children}
       </body>
     </html>
   );
