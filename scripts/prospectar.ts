@@ -34,6 +34,7 @@ import {
 } from "../lib/prospects/db";
 import {
   isChain,
+  isFakePhone,
   scoreProspect,
   toProspect,
   type MapsPlace,
@@ -87,6 +88,7 @@ async function rescore() {
             phone: row.phone,
             niche,
             tradeName: !isPlaceholderName(row.name),
+            sharedPhone: row.sharedPhone,
           })
         : scoreProspect({ ...row, niche });
     return [{ id: row.id, score, reasons, before: row.score }];
@@ -96,6 +98,17 @@ async function rescore() {
   console.log(`✔ Score recalculado em ${updates.length} prospects (${changed} mudaram).`);
 
   // Regras de descarte novas valem também para o que já foi coletado.
+  const fakePhones = rows.filter(
+    (row) => row.status === "novo" && row.phone && isFakePhone(row.phone),
+  );
+  await discardProspects(
+    fakePhones.map((row) => row.id),
+    "Telefone de preenchimento no cadastro (não é um número real): descartado automaticamente.",
+  );
+  if (fakePhones.length) {
+    console.log(`✔ ${fakePhones.length} com telefone falso descartados.`);
+  }
+
   const chains = rows.filter((row) => row.status === "novo" && isChain(row.name));
   await discardProspects(
     chains.map((row) => row.id),

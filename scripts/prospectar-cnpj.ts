@@ -21,14 +21,22 @@
  *   --simular    mostra o resultado sem gravar no banco
  */
 import { parseArgs } from "node:util";
+import { upsertAccountants, type AccountantInput } from "../lib/prospects/accountants";
 import {
   latestMonth,
   loadMunicipalities,
+  recentPhones,
+  scoreNewCompany,
   streamZipCsv,
   toCnpjProspect,
   type CnpjReject,
 } from "../lib/prospects/cnpj";
-import { insertProspects, type NewProspect } from "../lib/prospects/db";
+import {
+  ACCOUNTANT_THRESHOLD,
+  insertProspects,
+  updateSharedPhones,
+  type NewProspect,
+} from "../lib/prospects/db";
 import { findNiche, niches, type Niche } from "../lib/prospects/niches";
 import { cnpjCities } from "../lib/prospects/regions";
 
@@ -97,12 +105,17 @@ async function main() {
   const rejected: Partial<Record<CnpjReject, number>> = {};
   let rows = 0;
   const started = Date.now();
+  // Telefone → empresas abertas no período (todo o Brasil, qualquer atividade).
+  const phoneCounts = new Map<string, number>();
 
   async function readFile(file: string) {
     let fileRows = 0;
     let fileFound = 0;
     await streamZipCsv(month, file, (fields) => {
       fileRows++;
+      for (const phone of recentPhones(fields, since)) {
+        phoneCounts.set(phone, (phoneCounts.get(phone) ?? 0) + 1);
+      }
       const outcome = toCnpjProspect(fields, { cnaes, cities, pairs: wantedPairs, since });
       if ("rejected" in outcome) {
         if (outcome.rejected !== "fora do filtro") {
@@ -139,6 +152,40 @@ async function main() {
     p.name = `Nova empresa de ${findNiche(p.niche)?.label.toLowerCase()} · ${p.neighborhood ?? p.city}`;
   }
 
+  // Telefones compartilhados: marca o prospect (sem pontos de contato) e
+  // monta a lista de prováveis contadores para a Frente 2.
+  const accountants = new Map<string, AccountantInput>();
+  for (const p of [...found, ...withoutName]) {
+    const shared = p.phone ? (phoneCounts.get(p.phone) ?? 1) : 0;
+    if (shared < ACCOUNTANT_THRESHOLD) continue;
+    p.sharedPhone = shared;
+    const niche = findNiche(p.niche)!;
+    const rescored = scoreNewCompany({
+      openedAt: p.openedAt!,
+      phone: p.phone,
+      niche,
+      tradeName: !p.name.startsWith("Nova empresa de "),
+      sharedPhone: shared,
+    });
+    p.score = rescored.score;
+    p.scoreReasons = rescored.reasons;
+
+    const entry = accountants.get(p.phone!) ?? {
+      phone: p.phone!,
+      companies: shared,
+      cities: [],
+      niches: [],
+      sample: [],
+      month,
+    };
+    const place = `${p.city}/${p.state}`;
+    if (!entry.cities.includes(place)) entry.cities.push(place);
+    if (!entry.niches.includes(niche.label)) entry.niches.push(niche.label);
+    if (!p.name.startsWith("Nova empresa de ") && entry.sample.length < 3)
+      entry.sample.push(p.name);
+    accountants.set(p.phone!, entry);
+  }
+
   const all = [...found, ...(includeUnnamed ? withoutName : [])].sort((a, b) => b.score - a.score);
   const byNiche = new Map<string, number>();
   for (const p of all) byNiche.set(p.niche, (byNiche.get(p.niche) ?? 0) + 1);
@@ -152,6 +199,10 @@ async function main() {
   );
   for (const [reason, count] of Object.entries(rejected))
     console.log(`Descartadas (${reason}): ${count}`);
+  const flagged = all.filter((p) => p.sharedPhone >= ACCOUNTANT_THRESHOLD).length;
+  console.log(
+    `Telefone de provável contador: ${flagged} empresas · ${accountants.size} números (em ${ACCOUNTANT_THRESHOLD}+ empresas novas)`,
+  );
   console.log(`Por nicho: ${[...byNiche].map(([n, c]) => `${n} ${c}`).join(" · ")}`);
 
   console.table(
@@ -169,7 +220,19 @@ async function main() {
     return;
   }
   const inserted = await insertProspects(all);
+  // Empresas já gravadas em coletas anteriores recebem a marcação atualizada.
+  const updated = await updateSharedPhones(
+    all.map((p) => ({
+      externalId: p.externalId,
+      sharedPhone: p.sharedPhone,
+      score: p.score,
+      reasons: p.scoreReasons,
+    })),
+  );
+  await upsertAccountants([...accountants.values()]);
   console.log(`\n✔ ${inserted} novas gravadas · ${all.length - inserted} já existiam no banco.`);
+  console.log(`✔ ${updated} já gravadas tiveram a marcação de telefone atualizada.`);
+  console.log(`✔ ${accountants.size} prováveis contadores na lista (/interno/contadores).`);
 }
 
 main().catch((error) => {

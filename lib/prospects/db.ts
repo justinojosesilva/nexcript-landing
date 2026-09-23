@@ -2,6 +2,12 @@ import type { Row } from "@libsql/client";
 import { schemaOnce } from "../db";
 import { cadenceSteps, currentStep, historyLine, todaySP, type ContactChannel } from "./cadence";
 
+/**
+ * Telefone que aparece em 3 ou mais empresas abertas no período costuma ser
+ * do escritório de contabilidade que registrou os CNPJs, e não do dono.
+ */
+export const ACCOUNTANT_THRESHOLD = 3;
+
 // Funil da prospecção ativa (diferente dos leads que chegam pelo site).
 export const prospectStatuses = [
   "novo",
@@ -38,6 +44,8 @@ export type NewProspect = {
   mapsUrl: string | null;
   score: number;
   scoreReasons: string;
+  /** Em quantas empresas novas o telefone aparece (3+ = provável contador). */
+  sharedPhone: number;
 };
 
 export type Prospect = NewProspect & {
@@ -51,8 +59,9 @@ export type Prospect = NewProspect & {
   nextActionAt: string | null;
 };
 
-const db = schemaOnce([
-  `CREATE TABLE IF NOT EXISTS prospects (
+const db = schemaOnce(
+  [
+    `CREATE TABLE IF NOT EXISTS prospects (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     updated_at TEXT,
@@ -78,14 +87,18 @@ const db = schemaOnce([
     owner TEXT,
     notes TEXT
   )`,
-  "CREATE INDEX IF NOT EXISTS prospects_score ON prospects (score DESC)",
-  "CREATE INDEX IF NOT EXISTS prospects_phone ON prospects (phone)",
-], [
-  // Cadência de contato (Frente 3), adicionadas depois da tabela existir.
-  { table: "prospects", name: "contact_attempts", definition: "INTEGER NOT NULL DEFAULT 0" },
-  { table: "prospects", name: "last_contact_at", definition: "TEXT" },
-  { table: "prospects", name: "next_action_at", definition: "TEXT" },
-]);
+    "CREATE INDEX IF NOT EXISTS prospects_score ON prospects (score DESC)",
+    "CREATE INDEX IF NOT EXISTS prospects_phone ON prospects (phone)",
+  ],
+  [
+    // Cadência de contato (Frente 3), adicionadas depois da tabela existir.
+    { table: "prospects", name: "contact_attempts", definition: "INTEGER NOT NULL DEFAULT 0" },
+    { table: "prospects", name: "last_contact_at", definition: "TEXT" },
+    { table: "prospects", name: "next_action_at", definition: "TEXT" },
+    // Telefone compartilhado entre empresas novas (provável contador).
+    { table: "prospects", name: "shared_phone", definition: "INTEGER NOT NULL DEFAULT 0" },
+  ],
+);
 
 /**
  * Grava sem duplicar: o mesmo lugar (external_id) ou o mesmo telefone já
@@ -98,12 +111,15 @@ export async function insertProspects(prospects: NewProspect[]) {
   for (let i = 0; i < prospects.length; i += 100) {
     const results = await client.batch(
       prospects.slice(i, i + 100).map((p) => ({
+        // O mesmo telefone não entra duas vezes, exceto o de contador, que é
+        // compartilhado por empresas diferentes.
         sql: `INSERT INTO prospects (source, external_id, name, niche, category, phone, website,
                 address, neighborhood, city, state, visitable, rating, reviews, opened_at,
-                maps_url, score, score_reasons)
-              SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                maps_url, score, score_reasons, shared_phone)
+              SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
               WHERE NOT EXISTS (
-                SELECT 1 FROM prospects WHERE external_id = ? OR (? IS NOT NULL AND phone = ?)
+                SELECT 1 FROM prospects
+                WHERE external_id = ? OR (? IS NOT NULL AND ? < ${ACCOUNTANT_THRESHOLD} AND phone = ?)
               )`,
         args: [
           p.source,
@@ -124,8 +140,10 @@ export async function insertProspects(prospects: NewProspect[]) {
           p.mapsUrl,
           p.score,
           p.scoreReasons,
+          p.sharedPhone,
           p.externalId,
           p.phone,
+          p.sharedPhone,
           p.phone,
         ],
       })),
@@ -211,6 +229,7 @@ function toProspectRow(row: Row): Prospect {
     contactAttempts: Number(row.contact_attempts ?? 0),
     lastContactAt: row.last_contact_at ? String(row.last_contact_at) : null,
     nextActionAt: row.next_action_at ? String(row.next_action_at) : null,
+    sharedPhone: Number(row.shared_phone ?? 0),
   };
 }
 
@@ -225,13 +244,18 @@ export async function listProspects(filters: ProspectFilters, page = 1, pageSize
             LIMIT ? OFFSET ?`,
       args: [...where.args, pageSize, (page - 1) * pageSize],
     }),
-    client.execute({ sql: `SELECT COUNT(*) AS total FROM prospects ${where.sql}`, args: where.args }),
+    client.execute({
+      sql: `SELECT COUNT(*) AS total FROM prospects ${where.sql}`,
+      args: where.args,
+    }),
   ]);
   return { prospects: rows.rows.map(toProspectRow), total: Number(count.rows[0].total) };
 }
 
 export async function getProspect(id: number) {
-  const result = await (await db()).execute({
+  const result = await (
+    await db()
+  ).execute({
     sql: "SELECT * FROM prospects WHERE id = ?",
     args: [id],
   });
@@ -271,7 +295,9 @@ export async function updateProspect(
 ) {
   // Depois da resposta (ou do encerramento), a cadência automática para.
   const keepCadence = status === "novo" || status === "contatado";
-  await (await db()).execute({
+  await (
+    await db()
+  ).execute({
     sql: `UPDATE prospects SET status = ?, owner = ?, notes = ?,
             next_action_at = CASE WHEN ? THEN next_action_at ELSE NULL END,
             updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
@@ -294,9 +320,15 @@ export async function registerContact(id: number, channel: ContactChannel, by: s
   const isLast = step.key === cadenceSteps[cadenceSteps.length - 1].key;
   const next = step.daysToNext === null ? null : todaySP(step.daysToNext);
   const notes = [prospect.notes, historyLine(channel, step, by)].filter(Boolean).join("\n");
-  const status: ProspectStatus = isLast ? "perdido" : prospect.status === "novo" ? "contatado" : prospect.status;
+  const status: ProspectStatus = isLast
+    ? "perdido"
+    : prospect.status === "novo"
+      ? "contatado"
+      : prospect.status;
 
-  await (await db()).execute({
+  await (
+    await db()
+  ).execute({
     sql: `UPDATE prospects SET contact_attempts = contact_attempts + 1,
             last_contact_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
             next_action_at = ?, status = ?, notes = ?,
@@ -308,13 +340,16 @@ export async function registerContact(id: number, channel: ContactChannel, by: s
 
 /** Dados usados no score, para recalcular sem nova coleta. */
 export async function listForRescore() {
-  const result = await (await db()).execute(
-    "SELECT id, source, name, status, niche, reviews, rating, phone, website, opened_at, score FROM prospects",
+  const result = await (
+    await db()
+  ).execute(
+    "SELECT id, source, name, status, niche, reviews, rating, phone, website, opened_at, shared_phone, score FROM prospects",
   );
   return result.rows.map((row) => ({
     id: Number(row.id),
     source: String(row.source) as NewProspect["source"],
     openedAt: row.opened_at ? String(row.opened_at) : null,
+    sharedPhone: Number(row.shared_phone ?? 0),
     name: String(row.name),
     status: String(row.status) as ProspectStatus,
     niche: String(row.niche),
@@ -328,7 +363,9 @@ export async function listForRescore() {
 
 export async function updateScores(scores: { id: number; score: number; reasons: string }[]) {
   if (scores.length === 0) return;
-  await (await db()).batch(
+  await (
+    await db()
+  ).batch(
     scores.map(({ id, score, reasons }) => ({
       sql: "UPDATE prospects SET score = ?, score_reasons = ? WHERE id = ?",
       args: [score, reasons, id],
@@ -340,7 +377,9 @@ export async function updateScores(scores: { id: number; score: number; reasons:
 /** Descarta prospects ainda não trabalhados, registrando o motivo nas anotações. */
 export async function discardProspects(ids: number[], reason: string) {
   if (ids.length === 0) return;
-  await (await db()).batch(
+  await (
+    await db()
+  ).batch(
     ids.map((id) => ({
       sql: `UPDATE prospects SET status = 'descartado', notes = ?,
               updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
@@ -349,4 +388,27 @@ export async function discardProspects(ids: number[], reason: string) {
     })),
     "write",
   );
+}
+
+/**
+ * Atualiza a marcação de telefone compartilhado (e o score) de empresas do
+ * CNPJ já gravadas, quando uma nova leitura da Receita conta os números.
+ */
+export async function updateSharedPhones(
+  updates: { externalId: string; sharedPhone: number; score: number; reasons: string }[],
+) {
+  const client = await db();
+  let changed = 0;
+  for (let i = 0; i < updates.length; i += 100) {
+    const results = await client.batch(
+      updates.slice(i, i + 100).map((u) => ({
+        sql: `UPDATE prospects SET shared_phone = ?, score = ?, score_reasons = ?
+              WHERE external_id = ? AND source = 'cnpj' AND shared_phone <> ?`,
+        args: [u.sharedPhone, u.score, u.reasons, u.externalId, u.sharedPhone],
+      })),
+      "write",
+    );
+    changed += results.reduce((sum, r) => sum + r.rowsAffected, 0);
+  }
+  return changed;
 }

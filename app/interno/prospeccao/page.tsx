@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { isAuthorized } from "@/lib/internal/auth";
 import { formatDay, todaySP } from "@/lib/prospects/cadence";
 import {
+  ACCOUNTANT_THRESHOLD,
   getProspect,
   listProspects,
   prospectOwners,
@@ -189,6 +190,15 @@ export default async function ProspectingPage({ searchParams }: { searchParams: 
                       {p.status}
                     </span>
                     {p.owner && <span className={styles.chip}>{p.owner}</span>}
+                    {p.sharedPhone >= ACCOUNTANT_THRESHOLD && (
+                      <span
+                        className={styles.chip}
+                        data-tone="warn"
+                        title="Telefone aparece em várias empresas novas"
+                      >
+                        tel. de contador?
+                      </span>
+                    )}
                     {action && (
                       <span className={styles.chip} data-tone={action.tone}>
                         {action.label}

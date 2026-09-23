@@ -20,6 +20,7 @@ export default function InternalLayout({ children }: { children: React.ReactNode
           <nav className={styles.nav} aria-label="Área interna">
             <Link href="/interno/leads">Leads</Link>
             <Link href="/interno/prospeccao">Prospecção</Link>
+            <Link href="/interno/contadores">Contadores</Link>
             <a href="/" target="_blank" rel="noopener noreferrer">
               Ver site ↗
             </a>

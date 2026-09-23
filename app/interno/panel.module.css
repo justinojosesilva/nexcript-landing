@@ -691,3 +691,17 @@
 .tabPanel h3:not(:first-child) {
   margin-top: 10px;
 }
+
+.chip[data-tone="warn"] {
+  background: #ece4f7;
+  color: #53307a;
+}
+
+.badge[data-status="parceiro"] {
+  background: #dcebd9;
+  color: #2f5a34;
+}
+
+.card > .accordion {
+  margin-top: 12px;
+}

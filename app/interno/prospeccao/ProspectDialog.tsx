@@ -1,6 +1,11 @@
 import { contactChannels, currentStep, formatDay } from "@/lib/prospects/cadence";
 import { conversationScript } from "@/lib/prospects/conversation";
-import { prospectOwners, prospectStatuses, type Prospect } from "@/lib/prospects/db";
+import {
+  ACCOUNTANT_THRESHOLD,
+  prospectOwners,
+  prospectStatuses,
+  type Prospect,
+} from "@/lib/prospects/db";
 import { formatWhatsapp } from "@/lib/leads/origin";
 import { isMobile } from "@/lib/prospects/maps";
 import { buildMessage, visitScript, whatsappLink } from "@/lib/prospects/messages";
@@ -40,6 +45,7 @@ export function ProspectDialog({
   const message = step ? buildMessage(p, step, sender) : null;
   const mobile = p.phone ? isMobile(p.phone) : false;
   const closed = ["ganho", "perdido", "descartado"].includes(p.status);
+  const accountantPhone = p.sharedPhone >= ACCOUNTANT_THRESHOLD;
 
   const nextContact = (
     <>
@@ -63,7 +69,9 @@ export function ProspectDialog({
               <input type="hidden" name="by" value={sender} />
               <select
                 name="channel"
-                defaultValue={p.visitable && p.owner === "Andréia" ? "Visita" : "WhatsApp"}
+                defaultValue={
+                  p.visitable && (p.owner === "Andréia" || accountantPhone) ? "Visita" : "WhatsApp"
+                }
                 aria-label="Canal usado"
               >
                 {contactChannels.map((c) => (
@@ -76,7 +84,9 @@ export function ProspectDialog({
           <p className={styles.hint}>
             Revise a mensagem no WhatsApp antes de enviar e só registre depois de enviar. O registro
             agenda o próximo contato e anota o histórico.
-            {!mobile && p.phone && " Telefone fixo: prefira ligar ou visitar."}
+            {accountantPhone
+              ? ` Atenção: este número aparece em ${p.sharedPhone} empresas abertas agora e provavelmente é da contabilidade. ${p.visitable ? "Prefira a visita." : "Se enviar, pergunte pelo responsável da empresa."}`
+              : !mobile && p.phone && " Telefone fixo: prefira ligar ou visitar."}
           </p>
         </>
       ) : (
@@ -241,7 +251,11 @@ export function ProspectDialog({
                 {p.phone ? (
                   <>
                     <a href={`tel:+${p.phone}`}>{formatWhatsapp(p.phone)}</a>{" "}
-                    {mobile ? "(celular)" : "(fixo: pode não ter WhatsApp)"}
+                    {accountantPhone
+                      ? `(aparece em ${p.sharedPhone} empresas novas: provável contador)`
+                      : mobile
+                        ? "(celular)"
+                        : "(fixo: pode não ter WhatsApp)"}
                   </>
                 ) : (
                   "—"

@@ -77,3 +77,4 @@ pnpm prospectar:cnpj --dias 30 --nicho odontologia --cidades "SAO PAULO/SP"
 - Guarda só o necessário para a abordagem: nome fantasia, telefone, endereço comercial, cidade, nicho e data de abertura.
 - As mensagens do painel usam a abertura recente como "momento" ("vi no cadastro público de empresas que vocês abriram agora em setembro…").
 - Requer `bsdtar` (nativo no macOS) para descompactar em streaming.
+- **Telefone de contador:** o coletor conta em quantas empresas abertas no período (todo o Brasil, qualquer atividade) cada telefone aparece. Com 3 ou mais, o número é marcado como provável contabilidade: o prospect entra no painel com a etiqueta "tel. de contador?", sem pontos de contato no score, e o número vai para a lista `/interno/contadores` (Frente 2, parcerias de indicação).

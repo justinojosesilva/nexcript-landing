@@ -22,12 +22,7 @@ export type MapsPlace = {
 };
 
 export type RejectReason =
-  | "fechado"
-  | "tem site"
-  | "rede/franquia"
-  | "sem telefone"
-  | "poucas avaliações"
-  | "incompleto";
+  "fechado" | "tem site" | "rede/franquia" | "sem telefone" | "poucas avaliações" | "incompleto";
 
 /**
  * Redes e franquias: a unidade não contrata site próprio (a marca já tem).
@@ -36,12 +31,31 @@ export type RejectReason =
 const chains = new RegExp(
   "\\b(" +
     [
-      "petland", "cobasi", "petz", "pet center marginal",
-      "odontocompany", "odonto company", "oral sin", "sorridents", "odontoexcellence",
-      "amo odonto", "orthodontic center", "orthopride", "dr\\.? ?consulta",
-      "smart ?fit", "bluefit", "selfit", "bodytech", "bio ritmo",
-      "espa[cç]o ?laser", "depyl action", "s[oó] ?sobrancelhas", "the beauty box",
-      "jet oil", "carglass", "pneustore",
+      "petland",
+      "cobasi",
+      "petz",
+      "pet center marginal",
+      "odontocompany",
+      "odonto company",
+      "oral sin",
+      "sorridents",
+      "odontoexcellence",
+      "amo odonto",
+      "orthodontic center",
+      "orthopride",
+      "dr\\.? ?consulta",
+      "smart ?fit",
+      "bluefit",
+      "selfit",
+      "bodytech",
+      "bio ritmo",
+      "espa[cç]o ?laser",
+      "depyl action",
+      "s[oó] ?sobrancelhas",
+      "the beauty box",
+      "jet oil",
+      "carglass",
+      "pneustore",
     ].join("|") +
     ")\\b",
   "i",
@@ -69,7 +83,27 @@ export function isOwnWebsite(website?: string) {
 export function normalizePhone(place: MapsPlace) {
   const digits = (place.phoneUnformatted ?? place.phone ?? "").replace(/\D/g, "");
   const local = digits.startsWith("55") && digits.length >= 12 ? digits.slice(2) : digits;
-  return /^[1-9]{2}9?\d{8}$/.test(local) ? `55${local}` : null;
+  return toBrazilianPhone(local);
+}
+
+/**
+ * DDD + número → "55…", ou null se não for um telefone real. Cadastros usam
+ * números de preenchimento como (11) 0000-0000 ou (11) 99999-9999.
+ */
+export function toBrazilianPhone(local: string) {
+  if (!/^[1-9]{2}9?\d{8}$/.test(local)) return null;
+  // Últimos 8 dígitos (sem o 9 do celular): sequências e números com no
+  // máximo 2 dígitos diferentes são preenchimento, não telefone real.
+  const base = local.slice(-8);
+  const sequences = "0123456789012345678909876543210987654321";
+  if (/^0/.test(local.slice(2)) || new Set(base).size <= 2 || sequences.includes(base)) {
+    return null;
+  }
+  return `55${local}`;
+}
+
+export function isFakePhone(phone: string) {
+  return toBrazilianPhone(phone.replace(/^55/, "")) === null;
 }
 
 export function isMobile(phone: string) {
@@ -77,7 +111,11 @@ export function isMobile(phone: string) {
 }
 
 const plain = (value?: string) =>
-  (value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+  (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
 
 /** Visitável = cidade de São Paulo (capital), onde as visitas presenciais acontecem. */
 export function isVisitable(city?: string, state?: string) {
@@ -176,6 +214,7 @@ export function toProspect(
       mapsUrl: place.url ?? null,
       score,
       scoreReasons: reasons,
+      sharedPhone: 0,
     },
   };
 }

@@ -3,8 +3,8 @@ import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
 import type { ReadableStream as WebReadableStream } from "node:stream/web";
 import { todaySP } from "./cadence";
-import type { NewProspect } from "./db";
-import { isChain, isMobile } from "./maps";
+import { ACCOUNTANT_THRESHOLD, type NewProspect } from "./db";
+import { isChain, isMobile, toBrazilianPhone } from "./maps";
 import type { Niche } from "./niches";
 
 /**
@@ -99,9 +99,18 @@ export type CnpjContext = {
 
 const pad = (value: string) => value.trim();
 
+/**
+ * Telefones de qualquer empresa ativa aberta no período (todo o Brasil,
+ * qualquer atividade): base para contar números compartilhados.
+ */
+export function recentPhones(f: string[], since: string) {
+  if (f[F.openedAt] < since || Number(f[F.status]) !== 2) return [];
+  const phones = [phoneFrom(f[F.ddd1], f[F.phone1]), phoneFrom(f[F.ddd2], f[F.phone2])];
+  return [...new Set(phones.filter((p): p is string => Boolean(p)))];
+}
+
 function phoneFrom(ddd: string, number: string) {
-  const digits = `${ddd}${number}`.replace(/\D/g, "").replace(/^0+/, "");
-  return /^[1-9]{2}9?\d{8}$/.test(digits) ? `55${digits}` : null;
+  return toBrazilianPhone(`${ddd}${number}`.replace(/\D/g, "").replace(/^0+/, ""));
 }
 
 const title = (value: string) =>
@@ -139,7 +148,14 @@ export function toCnpjProspect(
   const openedAt = `${opened.slice(0, 4)}-${opened.slice(4, 6)}-${opened.slice(6, 8)}`;
   const street = [pad(f[F.streetType]), pad(f[F.street])].filter(Boolean).join(" ");
   const city = title(cityName);
-  const { score, reasons } = scoreNewCompany({ openedAt, phone, niche, tradeName: !!tradeName });
+  // O telefone compartilhado é conferido depois, quando todos os arquivos forem lidos.
+  const { score, reasons } = scoreNewCompany({
+    openedAt,
+    phone,
+    niche,
+    tradeName: !!tradeName,
+    sharedPhone: 0,
+  });
 
   return {
     tradeName: !!tradeName,
@@ -163,20 +179,23 @@ export function toCnpjProspect(
       mapsUrl: null,
       score,
       scoreReasons: reasons,
+      sharedPhone: 0,
     },
   };
 }
 
 /**
  * Score de empresas recém-abertas (0 a 90): quanto mais nova, melhor o momento
- * (até 45), contato por celular (20), nicho (até 15) e nome fantasia, sinal de
- * marca própria (10).
+ * (até 45), contato por celular (20, zero se o número é de contador), nicho
+ * (até 15) e nome fantasia, sinal de marca própria (10).
  */
 export function scoreNewCompany(input: {
   openedAt: string;
   phone: string | null;
   niche: Niche;
   tradeName: boolean;
+  /** Em quantas empresas novas o telefone aparece (0 = não conferido). */
+  sharedPhone: number;
 }) {
   const reasons: string[] = [];
   let score = 0;
@@ -193,8 +212,12 @@ export function scoreNewCompany(input: {
     days <= 7 ? 45 : days <= 15 ? 40 : days <= 30 ? 30 : days <= 45 ? 20 : 12,
     `aberta há ${days} dias`,
   );
-  if (input.phone)
+  if (input.sharedPhone >= ACCOUNTANT_THRESHOLD) {
+    // Provavelmente é da contabilidade: não conta como contato direto.
+    add(0, `telefone em ${input.sharedPhone} empresas novas, provável contador`);
+  } else if (input.phone) {
     add(isMobile(input.phone) ? 20 : 8, isMobile(input.phone) ? "celular" : "telefone fixo");
+  }
   add(Math.round(input.niche.weight * 1.5), `nicho ${input.niche.label}`);
   if (input.tradeName) add(10, "tem nome fantasia");
   return { score, reasons: reasons.join(" · ") };

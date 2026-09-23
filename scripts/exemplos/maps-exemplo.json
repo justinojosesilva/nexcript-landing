@@ -7,7 +7,7 @@
     "neighborhood": "Santo Amaro",
     "city": "São Paulo",
     "state": "SP",
-    "phoneUnformatted": "+5511912345678",
+    "phoneUnformatted": "+5511947218365",
     "totalScore": 4.8,
     "reviewsCount": 132,
     "url": "https://maps.google.com/?cid=1"
@@ -18,7 +18,7 @@
     "categoryName": "Dentista",
     "city": "Campinas",
     "state": "SP",
-    "phoneUnformatted": "+5519987654321",
+    "phoneUnformatted": "+5519983712649",
     "website": "https://www.instagram.com/odontoexemplo",
     "totalScore": 4.5,
     "reviewsCount": 48,
@@ -30,7 +30,7 @@
     "categoryName": "Dentista",
     "city": "Curitiba",
     "state": "PR",
-    "phoneUnformatted": "+554133334444",
+    "phoneUnformatted": "+554132718405",
     "totalScore": 4.1,
     "reviewsCount": 22,
     "url": "https://maps.google.com/?cid=3"
@@ -40,7 +40,7 @@
     "title": "Clínica Fechada Exemplo",
     "city": "São Paulo",
     "state": "SP",
-    "phoneUnformatted": "+5511911112222",
+    "phoneUnformatted": "+5511958204713",
     "totalScore": 4.9,
     "reviewsCount": 80,
     "permanentlyClosed": true
@@ -50,7 +50,7 @@
     "title": "Clínica Com Site Exemplo",
     "city": "São Paulo",
     "state": "SP",
-    "phoneUnformatted": "+5511933334444",
+    "phoneUnformatted": "+5511962937418",
     "website": "https://clinicacomsite.com.br",
     "totalScore": 4.7,
     "reviewsCount": 200
@@ -68,7 +68,7 @@
     "title": "Clínica Nova Exemplo",
     "city": "São Paulo",
     "state": "SP",
-    "phoneUnformatted": "+5511955556666",
+    "phoneUnformatted": "+5511973046152",
     "totalScore": 5,
     "reviewsCount": 3
   },
@@ -77,7 +77,7 @@
     "title": "Mesmo Telefone Da Sorriso",
     "city": "São Paulo",
     "state": "SP",
-    "phoneUnformatted": "+55 11 91234-5678",
+    "phoneUnformatted": "+55 11 94721-8365",
     "totalScore": 4.8,
     "reviewsCount": 40
   },
@@ -86,7 +86,7 @@
     "title": "Petland - Vila Exemplo",
     "city": "São Paulo",
     "state": "SP",
-    "phoneUnformatted": "+5511977778888",
+    "phoneUnformatted": "+5511986310274",
     "totalScore": 4.5,
     "reviewsCount": 300
   }
