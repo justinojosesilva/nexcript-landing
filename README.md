@@ -42,3 +42,17 @@ Há uma base reutilizável para novos projetos em [`STARTER_KIT.md`](STARTER_KIT
 As páginas do site anterior (`/servicos`, `/cases`, `/sobre` e `/blog`) foram removidas e redirecionam permanentemente para a home (`next.config.ts`).
 
 Não houve publicação em produção. Antes de publicar, definir domínio/hosting e decidir se haverá captura independente de leads, analytics e política de privacidade específica para essas ferramentas.
+
+## Prospecção
+
+Coleta empresas no Google Maps (Apify), filtra (aberta, sem site próprio, com telefone e avaliações) e grava na tabela `prospects` do Turso. O resultado aparece em `/interno/prospeccao`, separado em visitáveis (cidade de São Paulo) e remotos.
+
+```bash
+pnpm prospectar --nicho odontologia --cidade "Campinas, SP"
+pnpm prospectar --nicho todos --cidade "São Paulo, SP" --limite 10 --simular
+```
+
+- Nichos e termos de busca: `lib/prospects/niches.ts`.
+- Regras de filtro e score: `lib/prospects/maps.ts`.
+- Teste sem Apify: `pnpm prospectar --nicho odontologia --arquivo scripts/exemplos/maps-exemplo.json --simular`.
+- Chaves no `.env.local`: `APIFY_TOKEN`, `TURSO_DATABASE_URL` e `TURSO_AUTH_TOKEN`.

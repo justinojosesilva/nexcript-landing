@@ -208,3 +208,58 @@
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.toolbar label {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.toolbar select {
+  border: 1px solid var(--nx-line);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  background: #fff;
+}
+
+.toolbar button {
+  padding: 9px 16px;
+  border: 1px solid var(--nx-ink);
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.score {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--nx-ink);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: help;
+}
+
+.reasons {
+  font-size: 11px;
+  color: var(--nx-muted);
+  margin-top: -4px;
+}

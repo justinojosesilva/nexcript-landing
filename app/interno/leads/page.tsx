@@ -5,7 +5,7 @@ import { isAuthorized } from "@/lib/internal/auth";
 import { countLeadsByStatus, leadStatuses, listLeads, type LeadStatus } from "@/lib/leads/db";
 import { formatWhatsapp, originLabel } from "@/lib/leads/origin";
 import { saveLead } from "./actions";
-import styles from "./leads.module.css";
+import styles from "../panel.module.css";
 
 export const metadata: Metadata = {
   title: "Leads | Nexcript interno",

@@ -1,4 +1,4 @@
-import { createClient, type Client } from "@libsql/client";
+import { schemaOnce } from "../db";
 
 // Status usados no acompanhamento interno, na ordem do funil.
 export const leadStatuses = [
@@ -66,37 +66,11 @@ CREATE TABLE IF NOT EXISTS leads (
   notes TEXT
 )`;
 
-let client: Client | null = null;
-let ready: Promise<unknown> | null = null;
-
-/**
- * Turso em produção (TURSO_DATABASE_URL + TURSO_AUTH_TOKEN).
- * Em desenvolvimento, sem variáveis, usa um arquivo SQLite local.
- */
-async function db(): Promise<Client> {
-  if (!client) {
-    const url =
-      process.env.TURSO_DATABASE_URL ??
-      (process.env.NODE_ENV === "production" ? undefined : "file:.data/leads.db");
-    if (!url) throw new Error("TURSO_DATABASE_URL não configurada.");
-    client = createClient({ url, authToken: process.env.TURSO_AUTH_TOKEN });
-  }
-  ready ??= client
-    .batch(
-      [
-        schema,
-        "CREATE INDEX IF NOT EXISTS leads_created_at ON leads (created_at)",
-        "CREATE INDEX IF NOT EXISTS leads_whatsapp ON leads (whatsapp)",
-      ],
-      "write",
-    )
-    .catch((error) => {
-      ready = null;
-      throw error;
-    });
-  await ready;
-  return client;
-}
+const db = schemaOnce([
+  schema,
+  "CREATE INDEX IF NOT EXISTS leads_created_at ON leads (created_at)",
+  "CREATE INDEX IF NOT EXISTS leads_whatsapp ON leads (whatsapp)",
+]);
 
 /** Evita registros duplicados quando a pessoa envia duas vezes seguidas. */
 export async function hasRecentLead(whatsapp: string, minutes = 10) {
