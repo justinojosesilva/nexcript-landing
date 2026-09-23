@@ -16,7 +16,7 @@
  *   --min-avaliacoes   mínimo de avaliações para contar como ativo (padrão 10)
  *   --incluir-redes    busca também quem tem "site"; mantém quem só tem rede social
  *   --confirmar        necessário quando a estimativa de custo passa de US$ 0,50
- *   --recalcular       recalcula o score de todos os prospects gravados
+ *   --recalcular       recalcula o score de tudo o que foi gravado e descarta redes/franquias
  *   --arquivo          lê lugares de um JSON local em vez de chamar o Apify
  *   --simular          mostra o resultado sem gravar no banco
  *
@@ -24,14 +24,16 @@
  */
 import { readFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
-import { searchMaps } from "../lib/prospects/apify";
+import { monthlyUsage, searchMaps } from "../lib/prospects/apify";
 import {
+  discardProspects,
   insertProspects,
   listForRescore,
   updateScores,
   type NewProspect,
 } from "../lib/prospects/db";
 import {
+  isChain,
   scoreProspect,
   toProspect,
   type MapsPlace,
@@ -45,8 +47,8 @@ try {
   process.loadEnvFile(".env.local");
 } catch {}
 
-// Custo observado na primeira coleta real: US$ 0,042 por 20 lugares.
-const USD_PER_PLACE = 0.0021;
+// Custo real no plano gratuito: US$ 0,004 por lugar + US$ 0,001 pelo filtro "sem site".
+const USD_PER_PLACE = 0.005;
 const CONFIRM_ABOVE_USD = 0.5;
 
 const { values } = parseArgs({
@@ -81,6 +83,16 @@ async function rescore() {
   await updateScores(updates);
   const changed = updates.filter((u) => u.score !== u.before).length;
   console.log(`✔ Score recalculado em ${updates.length} prospects (${changed} mudaram).`);
+
+  // Regras de descarte novas valem também para o que já foi coletado.
+  const chains = rows.filter((row) => row.status === "novo" && isChain(row.name));
+  await discardProspects(
+    chains.map((row) => row.id),
+    "Rede/franquia: descartado automaticamente.",
+  );
+  if (chains.length) {
+    console.log(`✔ ${chains.length} redes/franquias descartadas: ${chains.map((c) => c.name).join("; ")}`);
+  }
 }
 
 async function collect() {
@@ -116,7 +128,7 @@ async function collect() {
   const found: NewProspect[] = [];
   const rejected: Partial<Record<RejectReason, number>> = {};
   let totalPlaces = 0;
-  let totalCost = 0;
+  const usageBefore = values.arquivo ? null : await monthlyUsage();
 
   for (const niche of selectedNiches) {
     if (values.arquivo) {
@@ -137,7 +149,6 @@ async function collect() {
           },
           (status) => process.stdout.write(`  ${status}...\r`),
         );
-        totalCost += result.costUsd ?? 0;
         console.log(`  ${result.places.length} lugares retornados`);
         classify(result.places, niche);
       } catch (error) {
@@ -166,7 +177,13 @@ async function collect() {
   for (const [reason, count] of Object.entries(rejected)) {
     console.log(`Descartados (${reason}): ${count}`);
   }
-  if (!values.arquivo) console.log(`Custo Apify: US$ ${totalCost.toFixed(3)}`);
+  if (usageBefore) {
+    const after = await monthlyUsage();
+    console.log(
+      `Consumo Apify no mês: US$ ${after.usedUsd.toFixed(2)} de US$ ${after.limitUsd.toFixed(2)} ` +
+        `(+US$ ${(after.usedUsd - usageBefore.usedUsd).toFixed(2)} nesta coleta; o valor final fecha em alguns minutos)`,
+    );
+  }
 
   console.table(
     unique.slice(0, 15).map((p) => ({

@@ -224,10 +224,12 @@ export async function updateProspect(
 /** Dados usados no score, para recalcular sem nova coleta. */
 export async function listForRescore() {
   const result = await (await db()).execute(
-    "SELECT id, niche, reviews, rating, phone, website, score FROM prospects",
+    "SELECT id, name, status, niche, reviews, rating, phone, website, score FROM prospects",
   );
   return result.rows.map((row) => ({
     id: Number(row.id),
+    name: String(row.name),
+    status: String(row.status) as ProspectStatus,
     niche: String(row.niche),
     reviews: row.reviews === null ? null : Number(row.reviews),
     rating: row.rating === null ? null : Number(row.rating),
@@ -243,6 +245,20 @@ export async function updateScores(scores: { id: number; score: number; reasons:
     scores.map(({ id, score, reasons }) => ({
       sql: "UPDATE prospects SET score = ?, score_reasons = ? WHERE id = ?",
       args: [score, reasons, id],
+    })),
+    "write",
+  );
+}
+
+/** Descarta prospects ainda não trabalhados, registrando o motivo nas anotações. */
+export async function discardProspects(ids: number[], reason: string) {
+  if (ids.length === 0) return;
+  await (await db()).batch(
+    ids.map((id) => ({
+      sql: `UPDATE prospects SET status = 'descartado', notes = ?,
+              updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+            WHERE id = ? AND status = 'novo'`,
+      args: [reason, id],
     })),
     "write",
   );

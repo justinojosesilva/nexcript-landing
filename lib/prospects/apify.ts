@@ -8,7 +8,6 @@ type Run = {
   id: string;
   status: string;
   defaultDatasetId: string;
-  usageTotalUsd?: number;
 };
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -48,7 +47,9 @@ export async function searchMaps(search: MapsSearch, onStatus?: (status: string)
       locationQuery: search.location,
       maxCrawledPlacesPerSearch: search.maxPerSearch,
       language: "pt-BR",
-      skipClosedPlaces: true,
+      // Cada filtro do Apify é cobrado por lugar. Fechados são descartados
+      // localmente (maps.ts); "sem site" fica no Apify porque evita pagar
+      // por lugares que seriam descartados.
       website: search.includeWithWebsite ? "allPlaces" : "withoutWebsite",
       scrapePlaceDetailPage: false,
       maxReviews: 0,
@@ -69,5 +70,16 @@ export async function searchMaps(search: MapsSearch, onStatus?: (status: string)
   const places = await call<MapsPlace[]>(
     `/datasets/${run.defaultDatasetId}/items?clean=true&format=json`,
   );
-  return { places, costUsd: run.usageTotalUsd ?? null, runId: run.id };
+  return { places, runId: run.id };
+}
+
+/**
+ * Consumo do mês na conta Apify. O valor por execução só fecha alguns
+ * minutos depois, então a comparação antes/depois é a medida mais fiel.
+ */
+export async function monthlyUsage() {
+  const { data } = await call<{
+    data: { limits: { maxMonthlyUsageUsd: number }; current: { monthlyUsageUsd: number } };
+  }>("/users/me/limits");
+  return { usedUsd: data.current.monthlyUsageUsd, limitUsd: data.limits.maxMonthlyUsageUsd };
 }

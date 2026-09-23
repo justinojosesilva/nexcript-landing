@@ -21,7 +21,35 @@ export type MapsPlace = {
   temporarilyClosed?: boolean;
 };
 
-export type RejectReason = "fechado" | "tem site" | "sem telefone" | "poucas avaliações" | "incompleto";
+export type RejectReason =
+  | "fechado"
+  | "tem site"
+  | "rede/franquia"
+  | "sem telefone"
+  | "poucas avaliações"
+  | "incompleto";
+
+/**
+ * Redes e franquias: a unidade não contrata site próprio (a marca já tem).
+ * Acrescente aqui as que aparecerem nas coletas.
+ */
+const chains = new RegExp(
+  "\\b(" +
+    [
+      "petland", "cobasi", "petz", "pet center marginal",
+      "odontocompany", "odonto company", "oral sin", "sorridents", "odontoexcellence",
+      "amo odonto", "orthodontic center", "orthopride", "dr\\.? ?consulta",
+      "smart ?fit", "bluefit", "selfit", "bodytech", "bio ritmo",
+      "espa[cç]o ?laser", "depyl action", "s[oó] ?sobrancelhas", "the beauty box",
+      "jet oil", "carglass", "pneustore",
+    ].join("|") +
+    ")\\b",
+  "i",
+);
+
+export function isChain(name: string) {
+  return chains.test(name);
+}
 
 // "Site" que é só rede social ou link de WhatsApp não conta como site próprio.
 const socialOnly =
@@ -116,6 +144,7 @@ export function toProspect(
   if (!place.placeId || !place.title) return { rejected: "incompleto" };
   if (place.permanentlyClosed || place.temporarilyClosed) return { rejected: "fechado" };
   if (isOwnWebsite(place.website)) return { rejected: "tem site" };
+  if (isChain(place.title)) return { rejected: "rede/franquia" };
   const phone = normalizePhone(place);
   if (!phone) return { rejected: "sem telefone" };
   if ((place.reviewsCount ?? 0) < minReviews) return { rejected: "poucas avaliações" };

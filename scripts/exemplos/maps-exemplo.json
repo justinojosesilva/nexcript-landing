@@ -1,10 +1,93 @@
 [
-  { "placeId": "ex-1", "title": "Clínica Sorriso Exemplo", "categoryName": "Dentista", "address": "Rua Exemplo, 100 - Santo Amaro, São Paulo - SP", "neighborhood": "Santo Amaro", "city": "São Paulo", "state": "SP", "phoneUnformatted": "+5511912345678", "totalScore": 4.8, "reviewsCount": 132, "url": "https://maps.google.com/?cid=1" },
-  { "placeId": "ex-2", "title": "Odonto Instagram Exemplo", "categoryName": "Dentista", "city": "Campinas", "state": "SP", "phoneUnformatted": "+5519987654321", "website": "https://www.instagram.com/odontoexemplo", "totalScore": 4.5, "reviewsCount": 48, "url": "https://maps.google.com/?cid=2" },
-  { "placeId": "ex-3", "title": "Consultório Fixo Exemplo", "categoryName": "Dentista", "city": "Curitiba", "state": "PR", "phoneUnformatted": "+554133334444", "totalScore": 4.1, "reviewsCount": 22, "url": "https://maps.google.com/?cid=3" },
-  { "placeId": "ex-4", "title": "Clínica Fechada Exemplo", "city": "São Paulo", "state": "SP", "phoneUnformatted": "+5511911112222", "totalScore": 4.9, "reviewsCount": 80, "permanentlyClosed": true },
-  { "placeId": "ex-5", "title": "Clínica Com Site Exemplo", "city": "São Paulo", "state": "SP", "phoneUnformatted": "+5511933334444", "website": "https://clinicacomsite.com.br", "totalScore": 4.7, "reviewsCount": 200 },
-  { "placeId": "ex-6", "title": "Clínica Sem Telefone Exemplo", "city": "Recife", "state": "PE", "totalScore": 4.6, "reviewsCount": 60 },
-  { "placeId": "ex-7", "title": "Clínica Nova Exemplo", "city": "São Paulo", "state": "SP", "phoneUnformatted": "+5511955556666", "totalScore": 5, "reviewsCount": 3 },
-  { "placeId": "ex-8", "title": "Mesmo Telefone Da Sorriso", "city": "São Paulo", "state": "SP", "phoneUnformatted": "+55 11 91234-5678", "totalScore": 4.8, "reviewsCount": 40 }
+  {
+    "placeId": "ex-1",
+    "title": "Clínica Sorriso Exemplo",
+    "categoryName": "Dentista",
+    "address": "Rua Exemplo, 100 - Santo Amaro, São Paulo - SP",
+    "neighborhood": "Santo Amaro",
+    "city": "São Paulo",
+    "state": "SP",
+    "phoneUnformatted": "+5511912345678",
+    "totalScore": 4.8,
+    "reviewsCount": 132,
+    "url": "https://maps.google.com/?cid=1"
+  },
+  {
+    "placeId": "ex-2",
+    "title": "Odonto Instagram Exemplo",
+    "categoryName": "Dentista",
+    "city": "Campinas",
+    "state": "SP",
+    "phoneUnformatted": "+5519987654321",
+    "website": "https://www.instagram.com/odontoexemplo",
+    "totalScore": 4.5,
+    "reviewsCount": 48,
+    "url": "https://maps.google.com/?cid=2"
+  },
+  {
+    "placeId": "ex-3",
+    "title": "Consultório Fixo Exemplo",
+    "categoryName": "Dentista",
+    "city": "Curitiba",
+    "state": "PR",
+    "phoneUnformatted": "+554133334444",
+    "totalScore": 4.1,
+    "reviewsCount": 22,
+    "url": "https://maps.google.com/?cid=3"
+  },
+  {
+    "placeId": "ex-4",
+    "title": "Clínica Fechada Exemplo",
+    "city": "São Paulo",
+    "state": "SP",
+    "phoneUnformatted": "+5511911112222",
+    "totalScore": 4.9,
+    "reviewsCount": 80,
+    "permanentlyClosed": true
+  },
+  {
+    "placeId": "ex-5",
+    "title": "Clínica Com Site Exemplo",
+    "city": "São Paulo",
+    "state": "SP",
+    "phoneUnformatted": "+5511933334444",
+    "website": "https://clinicacomsite.com.br",
+    "totalScore": 4.7,
+    "reviewsCount": 200
+  },
+  {
+    "placeId": "ex-6",
+    "title": "Clínica Sem Telefone Exemplo",
+    "city": "Recife",
+    "state": "PE",
+    "totalScore": 4.6,
+    "reviewsCount": 60
+  },
+  {
+    "placeId": "ex-7",
+    "title": "Clínica Nova Exemplo",
+    "city": "São Paulo",
+    "state": "SP",
+    "phoneUnformatted": "+5511955556666",
+    "totalScore": 5,
+    "reviewsCount": 3
+  },
+  {
+    "placeId": "ex-8",
+    "title": "Mesmo Telefone Da Sorriso",
+    "city": "São Paulo",
+    "state": "SP",
+    "phoneUnformatted": "+55 11 91234-5678",
+    "totalScore": 4.8,
+    "reviewsCount": 40
+  },
+  {
+    "placeId": "ex-9",
+    "title": "Petland - Vila Exemplo",
+    "city": "São Paulo",
+    "state": "SP",
+    "phoneUnformatted": "+5511977778888",
+    "totalScore": 4.5,
+    "reviewsCount": 300
+  }
 ]

@@ -14,7 +14,7 @@ export const saoPauloRegions: Record<string, string[]> = {
     "Brooklin",
     "Ipiranga",
     "Campo Limpo",
-    "Interlagos",
+    "Cidade Dutra",
     "Cidade Ademar",
     "Vila Andrade",
   ],
