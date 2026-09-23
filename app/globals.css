@@ -1560,6 +1560,35 @@ summary:focus-visible {
 .nx-form-note:last-child {
   margin-bottom: 0;
 }
+.nx-form-error {
+  color: #a63d22;
+  font-weight: 600;
+}
+.nx-optional {
+  color: var(--nx-muted);
+  font-weight: 400;
+}
+.nx-hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.nx-form-result {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+  color: var(--nx-ink);
+}
+.nx-form-result svg:first-child {
+  color: #608565;
+}
+.nx-form.nx-form-result p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--nx-muted);
+}
 .nx-footer {
   background: var(--nx-paper);
   color: var(--nx-ink);
