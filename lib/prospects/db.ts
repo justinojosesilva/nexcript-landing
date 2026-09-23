@@ -13,8 +13,8 @@ export const prospectStatuses = [
 ] as const;
 export type ProspectStatus = (typeof prospectStatuses)[number];
 
-// Quem cuida do contato: remoto (Justino) ou visitas em São Paulo (esposa).
-export const prospectOwners = ["Justino", "Esposa"] as const;
+// Quem cuida do contato: remoto (Justino) ou visitas em São Paulo (Andréia).
+export const prospectOwners = ["Justino", "Andréia"] as const;
 export type ProspectOwner = (typeof prospectOwners)[number];
 
 export type NewProspect = {
