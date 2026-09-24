@@ -1,10 +1,9 @@
-import type { AccountantInput } from "./prospects/accountants";
-import type { NewProspect } from "./prospects/db";
+import type { AccountantInput, NewProspect } from "./prospects/types";
 
 /**
- * Integração com o NexCRM (crm.nexcript.com.br), que substitui o painel
- * /interno: o formulário do site e os coletores gravam lá pela API de
- * ingestão. Variáveis: NEXCRM_URL e NEXCRM_TOKEN (criado com
+ * Integração com o NexCRM (crm.nexcript.com.br), onde a equipe acompanha
+ * leads e prospecção: o formulário do site e os coletores gravam lá pela API
+ * de ingestão. Variáveis: NEXCRM_URL e NEXCRM_TOKEN (criado com
  * `pnpm token:criar` no repositório do NexCRM).
  */
 

@@ -1,4 +1,4 @@
-import type { NewProspect } from "./db";
+import type { NewProspect } from "./types";
 import type { Niche } from "./niches";
 
 /** Campos do item do Google Maps Scraper (compass/crawler-google-places) usados aqui. */

@@ -27,7 +27,7 @@ import { readFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
 import { monthlyUsage, searchMaps } from "../lib/prospects/apify";
 import { crmConfigured, prospectItem, sendToCrm } from "../lib/nexcrm";
-import type { NewProspect } from "../lib/prospects/db";
+import type { NewProspect } from "../lib/prospects/types";
 import { toProspect, type MapsPlace, type RejectReason } from "../lib/prospects/maps";
 import { findNiche, niches, type Niche } from "../lib/prospects/niches";
 import { resolveNeighborhoods } from "../lib/prospects/regions";

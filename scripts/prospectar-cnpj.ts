@@ -22,7 +22,6 @@
  */
 import { parseArgs } from "node:util";
 import { accountantItem, crmConfigured, prospectItem, sendToCrm } from "../lib/nexcrm";
-import type { AccountantInput } from "../lib/prospects/accountants";
 import {
   latestMonth,
   loadMunicipalities,
@@ -32,7 +31,7 @@ import {
   toCnpjProspect,
   type CnpjReject,
 } from "../lib/prospects/cnpj";
-import { ACCOUNTANT_THRESHOLD, type NewProspect } from "../lib/prospects/db";
+import { ACCOUNTANT_THRESHOLD, type AccountantInput, type NewProspect } from "../lib/prospects/types";
 import { findNiche, niches, type Niche } from "../lib/prospects/niches";
 import { cnpjCities } from "../lib/prospects/regions";
 

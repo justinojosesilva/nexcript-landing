@@ -2,10 +2,14 @@ import { spawn } from "node:child_process";
 import { createInterface } from "node:readline";
 import { Readable } from "node:stream";
 import type { ReadableStream as WebReadableStream } from "node:stream/web";
-import { todaySP } from "./cadence";
-import { ACCOUNTANT_THRESHOLD, type NewProspect } from "./db";
+import { ACCOUNTANT_THRESHOLD, type NewProspect } from "./types";
 import { isChain, isMobile, toBrazilianPhone } from "./maps";
 import type { Niche } from "./niches";
+
+/** Data de hoje em São Paulo (AAAA-MM-DD), base da idade da empresa. */
+function todaySP() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(new Date());
+}
 
 /**
  * Dados abertos de CNPJ da Receita Federal, publicados mensalmente num

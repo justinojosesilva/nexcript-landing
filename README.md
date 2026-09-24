@@ -45,27 +45,26 @@ Não houve publicação em produção. Antes de publicar, definir domínio/hosti
 
 ## Prospecção
 
-Coleta empresas no Google Maps (Apify), filtra (aberta, sem site próprio, com telefone e avaliações) e grava na tabela `prospects` do Turso. O resultado aparece em `/interno/prospeccao`, separado em visitáveis (cidade de São Paulo) e remotos.
+Coleta empresas no Google Maps (Apify), filtra (aberta, sem site próprio, com telefone e avaliações) e grava no **NexCRM** (crm.nexcript.com.br) pela API de ingestão. O acompanhamento (Hoje, cadência, mensagens, pipeline) é feito lá; o antigo painel `/interno` foi removido.
 
 ```bash
 pnpm prospectar --nicho odontologia --cidade "Campinas, SP"
 pnpm prospectar --nicho odontologia --bairros zona-sul --limite 10
 pnpm prospectar --nicho todos --bairros "Moema, Brooklin" --limite 5
-pnpm prospectar --recalcular
 ```
 
 - `--bairros` aceita uma região de São Paulo (`zona-sul`, `zona-oeste`, `zona-norte`, `zona-leste`, `centro`), `todas` ou bairros separados por vírgula. Lista em `lib/prospects/regions.ts`.
 - Antes de chamar o Apify, o script mostra o custo máximo estimado e exige `--confirmar` acima de US$ 0,50.
-- `--recalcular` refaz o score de tudo o que já está gravado, depois de mudar as regras.
+- O CRM não duplica: o mesmo lugar só tem avaliações e score atualizados; telefone já cadastrado fica de fora.
 
 - Nichos e termos de busca: `lib/prospects/niches.ts`.
 - Regras de filtro e score: `lib/prospects/maps.ts`.
 - Teste sem Apify: `pnpm prospectar --nicho odontologia --arquivo scripts/exemplos/maps-exemplo.json --simular`.
-- Chaves no `.env.local`: `APIFY_TOKEN`, `TURSO_DATABASE_URL` e `TURSO_AUTH_TOKEN`.
+- Chaves no `.env.local`: `APIFY_TOKEN`, `NEXCRM_URL` e `NEXCRM_TOKEN` (token criado com `pnpm token:criar` no repositório do NexCRM).
 
 ### Empresas recém-abertas (CNPJ)
 
-Lê os dados abertos de CNPJ da Receita Federal (compartilhamento público do SERPRO, atualizado todo mês) em streaming: cerca de 5,4 GB passam pela rede, nada é gravado em disco. Filtra empresas **ativas**, abertas nos últimos 60 dias, com CNAE do combo de nichos, nas cidades de `cnpjCities` (`lib/prospects/regions.ts`) e com telefone. Grava na mesma tabela `prospects`, com origem `cnpj`.
+Lê os dados abertos de CNPJ da Receita Federal (compartilhamento público do SERPRO, atualizado todo mês) em streaming: cerca de 5,4 GB passam pela rede, nada é gravado em disco. Filtra empresas **ativas**, abertas nos últimos 60 dias, com CNAE do combo de nichos, nas cidades de `cnpjCities` (`lib/prospects/regions.ts`) e com telefone. Grava no NexCRM com a origem "Prospecção · CNPJ novo".
 
 ```bash
 pnpm prospectar:cnpj --simular          # todos os arquivos, sem gravar (~15 min)
@@ -75,6 +74,6 @@ pnpm prospectar:cnpj --dias 30 --nicho odontologia --cidades "SAO PAULO/SP"
 
 - Por padrão, só entram empresas **com nome fantasia**. Sem nome fantasia (quase sempre MEI), a razão social é nome e CPF de pessoa física e não é guardada; `--incluir-sem-nome` grava essas empresas com um nome descritivo.
 - Guarda só o necessário para a abordagem: nome fantasia, telefone, endereço comercial, cidade, nicho e data de abertura.
-- As mensagens do painel usam a abertura recente como "momento" ("vi no cadastro público de empresas que vocês abriram agora em setembro…").
+- As mensagens do roteiro no NexCRM usam a abertura recente como "momento" ("vi no cadastro público de empresas que vocês abriram agora em setembro…").
 - Requer `bsdtar` (nativo no macOS) para descompactar em streaming.
-- **Telefone de contador:** o coletor conta em quantas empresas abertas no período (todo o Brasil, qualquer atividade) cada telefone aparece. Com 3 ou mais, o número é marcado como provável contabilidade: o prospect entra no painel com a etiqueta "tel. de contador?", sem pontos de contato no score, e o número vai para a lista `/interno/contadores` (Frente 2, parcerias de indicação).
+- **Telefone de contador:** o coletor conta em quantas empresas abertas no período (todo o Brasil, qualquer atividade) cada telefone aparece. Com 3 ou mais, o número é marcado como provável contabilidade: o prospect entra no CRM com a etiqueta "tel. de contador?", sem pontos de contato no score, e o número vira um lead de parceria no pipeline **Parcerias** (Frente 2, parcerias de indicação).
