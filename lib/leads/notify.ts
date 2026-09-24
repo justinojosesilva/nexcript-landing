@@ -40,7 +40,8 @@ async function sendEmail(email: {
 }
 
 /** Aviso interno para quem atende os leads (LEAD_NOTIFY_EMAIL, separado por vírgula). */
-export async function notifyTeam(id: number, lead: NewLead) {
+/** `crmUrl` nulo: o NexCRM estava fora e o lead ficou só no Turso. */
+export async function notifyTeam(key: string, lead: NewLead, crmUrl: string | null) {
   const to = (process.env.LEAD_NOTIFY_EMAIL ?? "")
     .split(",")
     .map((address) => address.trim())
@@ -58,19 +59,19 @@ export async function notifyTeam(id: number, lead: NewLead) {
     ["Origem", escape(origin + (lead.utmCampaign ? ` / ${lead.utmCampaign}` : ""))],
     ["Desafio", escape(lead.message).replace(/\n/g, "<br>")],
   ];
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.nexcript.com.br";
 
   await sendEmail({
     to,
     subject: `Novo lead: ${lead.company} — ${lead.interest}`,
     replyTo: lead.email ?? undefined,
-    idempotencyKey: `lead-${id}-team`,
+    idempotencyKey: `lead-${key}-team`,
     html: `<div style="font-family:Arial,sans-serif;font-size:15px;color:#111">
-      <p><strong>Novo lead #${id} pelo site.</strong> Meta: responder em até 4 horas úteis.</p>
+      <p><strong>Novo lead pelo site.</strong> Meta: responder em até 4 horas úteis.</p>
+      ${crmUrl ? "" : `<p style="color:#b45309"><strong>O NexCRM não respondeu:</strong> o lead ficou salvo no banco antigo. Cadastre-o no CRM com “Novo lead”.</p>`}
       <table cellpadding="6" style="border-collapse:collapse">
         ${rows.map(([label, value]) => `<tr><td style="color:#666;vertical-align:top">${label}</td><td>${value}</td></tr>`).join("")}
       </table>
-      <p><a href="${whatsappLink}">Responder no WhatsApp</a> · <a href="${site}/interno/leads">Abrir painel de leads</a></p>
+      <p><a href="${whatsappLink}">Responder no WhatsApp</a> · ${crmUrl ? `<a href="${crmUrl}">Abrir no NexCRM</a>` : `<a href="https://crm.nexcript.com.br/leads">Abrir o NexCRM</a>`}</p>
     </div>`,
   });
 }
@@ -79,14 +80,14 @@ export async function notifyTeam(id: number, lead: NewLead) {
  * Confirmação para o visitante. Só liga com domínio verificado no Resend
  * (LEAD_CONFIRMATION_ENABLED=true e LEAD_FROM_EMAIL no domínio da Nexcript).
  */
-export async function confirmToVisitor(id: number, lead: NewLead) {
+export async function confirmToVisitor(key: string, lead: NewLead) {
   if (process.env.LEAD_CONFIRMATION_ENABLED !== "true" || !lead.email) return;
   const firstName = escape(lead.name.split(" ")[0]);
 
   await sendEmail({
     to: [lead.email],
     subject: "Recebemos seu pedido de diagnóstico — Nexcript",
-    idempotencyKey: `lead-${id}-visitor`,
+    idempotencyKey: `lead-${key}-visitor`,
     html: `<div style="font-family:Arial,sans-serif;font-size:15px;color:#111">
       <p>Olá, ${firstName}.</p>
       <p>Recebemos seu pedido de diagnóstico para <strong>${escape(lead.company)}</strong>.

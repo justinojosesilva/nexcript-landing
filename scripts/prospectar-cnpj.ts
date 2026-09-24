@@ -1,6 +1,6 @@
 /**
  * Coleta empresas recém-abertas nos dados abertos de CNPJ da Receita Federal
- * e grava na prospecção (origem "cnpj"). Lê os arquivos em streaming: cerca
+ * e grava no NexCRM (origem "Prospecção · CNPJ novo"). Lê os arquivos em streaming: cerca
  * de 5,4 GB passam pela rede por mês, mas nada é gravado em disco.
  *
  *   pnpm prospectar:cnpj
@@ -21,7 +21,8 @@
  *   --simular    mostra o resultado sem gravar no banco
  */
 import { parseArgs } from "node:util";
-import { upsertAccountants, type AccountantInput } from "../lib/prospects/accountants";
+import { accountantItem, crmConfigured, prospectItem, sendToCrm } from "../lib/nexcrm";
+import type { AccountantInput } from "../lib/prospects/accountants";
 import {
   latestMonth,
   loadMunicipalities,
@@ -31,12 +32,7 @@ import {
   toCnpjProspect,
   type CnpjReject,
 } from "../lib/prospects/cnpj";
-import {
-  ACCOUNTANT_THRESHOLD,
-  insertProspects,
-  updateSharedPhones,
-  type NewProspect,
-} from "../lib/prospects/db";
+import { ACCOUNTANT_THRESHOLD, type NewProspect } from "../lib/prospects/db";
 import { findNiche, niches, type Niche } from "../lib/prospects/niches";
 import { cnpjCities } from "../lib/prospects/regions";
 
@@ -74,6 +70,8 @@ function fileIndexes(spec: string) {
 }
 
 async function main() {
+  // Falha antes de baixar os ~5 GB da Receita, não no fim.
+  if (!values.simular && !crmConfigured()) fail("Configure NEXCRM_URL e NEXCRM_TOKEN no .env.local.");
   const selected = values.nicho === "todos" ? niches : [findNiche(values.nicho)];
   if (selected.some((n) => !n)) fail(`Nicho "${values.nicho}" não existe.`);
   const cnaes = new Map<string, Niche>();
@@ -219,20 +217,13 @@ async function main() {
     console.log("\nModo --simular: nada foi gravado.");
     return;
   }
-  const inserted = await insertProspects(all);
-  // Empresas já gravadas em coletas anteriores recebem a marcação atualizada.
-  const updated = await updateSharedPhones(
-    all.map((p) => ({
-      externalId: p.externalId,
-      sharedPhone: p.sharedPhone,
-      score: p.score,
-      reasons: p.scoreReasons,
-    })),
+  // Já gravadas em coletas anteriores recebem score e marcação de telefone atualizados.
+  const r = await sendToCrm(all.map(prospectItem));
+  console.log(
+    `\n✔ NexCRM: ${r.inserted} novas · ${r.updated} já existiam (score e telefone atualizados) · ${r.skipped} fora (telefone já cadastrado).`,
   );
-  await upsertAccountants([...accountants.values()]);
-  console.log(`\n✔ ${inserted} novas gravadas · ${all.length - inserted} já existiam no banco.`);
-  console.log(`✔ ${updated} já gravadas tiveram a marcação de telefone atualizada.`);
-  console.log(`✔ ${accountants.size} prováveis contadores na lista (/interno/contadores).`);
+  const a = await sendToCrm([...accountants.values()].map(accountantItem));
+  console.log(`✔ Contadores: ${a.inserted} novos · ${a.updated} atualizados (pipeline Parcerias no NexCRM).`);
 }
 
 main().catch((error) => {

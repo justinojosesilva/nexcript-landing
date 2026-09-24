@@ -1,10 +1,9 @@
 /**
- * Coleta empresas no Google Maps (via Apify), filtra e grava na prospecção.
+ * Coleta empresas no Google Maps (via Apify), filtra e grava no NexCRM.
  *
  *   pnpm prospectar --nicho odontologia --cidade "Campinas, SP"
  *   pnpm prospectar --nicho odontologia --bairros zona-sul --limite 10
  *   pnpm prospectar --nicho todos --bairros "Moema, Brooklin" --limite 5
- *   pnpm prospectar --recalcular
  *   pnpm prospectar --nicho odontologia --arquivo exemplo.json --simular
  *
  * Opções:
@@ -16,36 +15,24 @@
  *   --min-avaliacoes   mínimo de avaliações para contar como ativo (padrão 10)
  *   --incluir-redes    busca também quem tem "site"; mantém quem só tem rede social
  *   --confirmar        necessário quando a estimativa de custo passa de US$ 0,50
- *   --recalcular       recalcula o score de tudo o que foi gravado e descarta redes/franquias
  *   --arquivo          lê lugares de um JSON local em vez de chamar o Apify
  *   --simular          mostra o resultado sem gravar no banco
  *
- * Variáveis (.env.local): APIFY_TOKEN, TURSO_DATABASE_URL, TURSO_AUTH_TOKEN.
+ * Grava no NexCRM (API de ingestão), que não duplica: o mesmo lugar ou o mesmo
+ * telefone já cadastrado ficam de fora.
+ *
+ * Variáveis (.env.local): APIFY_TOKEN, NEXCRM_URL, NEXCRM_TOKEN.
  */
 import { readFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
 import { monthlyUsage, searchMaps } from "../lib/prospects/apify";
-import {
-  discardProspects,
-  insertProspects,
-  listForRescore,
-  updateScores,
-  type NewProspect,
-} from "../lib/prospects/db";
-import {
-  isChain,
-  isFakePhone,
-  scoreProspect,
-  toProspect,
-  type MapsPlace,
-  type RejectReason,
-} from "../lib/prospects/maps";
-import { scoreNewCompany } from "../lib/prospects/cnpj";
-import { isPlaceholderName } from "../lib/prospects/messages";
+import { crmConfigured, prospectItem, sendToCrm } from "../lib/nexcrm";
+import type { NewProspect } from "../lib/prospects/db";
+import { toProspect, type MapsPlace, type RejectReason } from "../lib/prospects/maps";
 import { findNiche, niches, type Niche } from "../lib/prospects/niches";
 import { resolveNeighborhoods } from "../lib/prospects/regions";
 
-// Chaves locais (APIFY_TOKEN e Turso). Sem o arquivo, usa o SQLite de desenvolvimento.
+// Chaves locais (APIFY_TOKEN e NexCRM).
 try {
   process.loadEnvFile(".env.local");
 } catch {}
@@ -63,7 +50,6 @@ const { values } = parseArgs({
     "min-avaliacoes": { type: "string", default: "10" },
     "incluir-redes": { type: "boolean", default: false },
     confirmar: { type: "boolean", default: false },
-    recalcular: { type: "boolean", default: false },
     arquivo: { type: "string" },
     simular: { type: "boolean", default: false },
   },
@@ -73,52 +59,6 @@ function fail(message: string): never {
   console.error(`\n✖ ${message}\n`);
   console.error(`Nichos disponíveis: ${niches.map((n) => n.id).join(", ")}, todos`);
   process.exit(1);
-}
-
-async function rescore() {
-  const rows = await listForRescore();
-  const updates = rows.flatMap((row) => {
-    const niche = findNiche(row.niche);
-    if (!niche) return [];
-    // Empresas do CNPJ têm score próprio, que cai conforme a abertura fica antiga.
-    const { score, reasons } =
-      row.source === "cnpj" && row.openedAt
-        ? scoreNewCompany({
-            openedAt: row.openedAt,
-            phone: row.phone,
-            niche,
-            tradeName: !isPlaceholderName(row.name),
-            sharedPhone: row.sharedPhone,
-          })
-        : scoreProspect({ ...row, niche });
-    return [{ id: row.id, score, reasons, before: row.score }];
-  });
-  await updateScores(updates);
-  const changed = updates.filter((u) => u.score !== u.before).length;
-  console.log(`✔ Score recalculado em ${updates.length} prospects (${changed} mudaram).`);
-
-  // Regras de descarte novas valem também para o que já foi coletado.
-  const fakePhones = rows.filter(
-    (row) => row.status === "novo" && row.phone && isFakePhone(row.phone),
-  );
-  await discardProspects(
-    fakePhones.map((row) => row.id),
-    "Telefone de preenchimento no cadastro (não é um número real): descartado automaticamente.",
-  );
-  if (fakePhones.length) {
-    console.log(`✔ ${fakePhones.length} com telefone falso descartados.`);
-  }
-
-  const chains = rows.filter((row) => row.status === "novo" && isChain(row.name));
-  await discardProspects(
-    chains.map((row) => row.id),
-    "Rede/franquia: descartado automaticamente.",
-  );
-  if (chains.length) {
-    console.log(
-      `✔ ${chains.length} redes/franquias descartadas: ${chains.map((c) => c.name).join("; ")}`,
-    );
-  }
 }
 
 async function collect() {
@@ -132,6 +72,7 @@ async function collect() {
     : values.cidade
       ? [values.cidade]
       : [];
+  if (!values.simular && !crmConfigured()) fail("Configure NEXCRM_URL e NEXCRM_TOKEN no .env.local.");
   if (!values.arquivo && locations.length === 0) {
     fail("Informe --cidade ou --bairros (ou --arquivo para teste).");
   }
@@ -229,11 +170,13 @@ async function collect() {
     console.log("\nModo --simular: nada foi gravado.");
     return;
   }
-  const inserted = await insertProspects(unique);
-  console.log(`\n✔ ${inserted} novos gravados · ${unique.length - inserted} já existiam no banco.`);
+  const r = await sendToCrm(unique.map(prospectItem));
+  console.log(
+    `\n✔ NexCRM: ${r.inserted} novos · ${r.updated} já existiam (dados atualizados) · ${r.skipped} fora (telefone já cadastrado).`,
+  );
 }
 
-(values.recalcular ? rescore() : collect()).catch((error) => {
+collect().catch((error) => {
   console.error(`\n✖ ${error instanceof Error ? error.message : error}`);
   process.exit(1);
 });
