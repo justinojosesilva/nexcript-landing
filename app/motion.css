@@ -439,3 +439,106 @@
     scale: 1 1;
   }
 }
+
+/* ───────── Conversão (Parte 3): atalho fixo no celular ───────── */
+.nx-mobile-cta {
+  display: none;
+}
+@media (max-width: 800px) {
+  .nx-mobile-cta {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 40;
+    display: flex;
+    gap: 10px;
+    padding: 10px 16px max(12px, env(safe-area-inset-bottom));
+    background: rgba(250, 249, 245, 0.96);
+    border-top: 1px solid var(--nx-line);
+    box-shadow: 0 -12px 30px -20px rgba(21, 43, 53, 0.4);
+    backdrop-filter: blur(10px);
+    translate: 0 110%;
+    transition: translate 0.35s var(--nx-ease-out);
+  }
+  .nx-mobile-cta.is-shown {
+    translate: 0 0;
+  }
+  .nx-mobile-cta .nx-button {
+    flex: 1;
+    min-height: 48px;
+    padding-block: 12px;
+  }
+  .nx-mobile-cta-whatsapp {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    border-radius: 5px;
+    background: #1f7a4d;
+    color: white;
+  }
+  /* O rodapé não fica escondido atrás da barra. */
+  .nx-footer {
+    padding-bottom: 76px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-mobile-cta {
+    transition: none;
+  }
+}
+
+/* Depoimentos (só aparecem quando houver itens em testimonials.ts). */
+.nx-testimonials {
+  background: #f0f1eb;
+}
+.nx-testimonial-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+.nx-testimonial-grid figure {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px;
+  background: #fffefa;
+  border: 1px solid var(--nx-line);
+  border-radius: 8px;
+}
+.nx-testimonial-grid figure > svg {
+  color: var(--nx-orange);
+}
+.nx-testimonial-grid blockquote p {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--nx-ink);
+}
+.nx-testimonial-grid figcaption {
+  margin-top: auto;
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+}
+.nx-testimonial-grid figcaption span {
+  color: var(--nx-muted);
+}
+
+/* Contato no rodapé. */
+.nx-footer-contact {
+  display: grid;
+  gap: 4px;
+  margin-top: 14px;
+  font-style: normal;
+  font-size: 12px;
+}
+.nx-footer-contact a {
+  width: fit-content;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--nx-line);
+}
+.nx-footer-contact a:hover {
+  color: #b84417;
+}

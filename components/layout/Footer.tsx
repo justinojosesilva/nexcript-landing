@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { contactEmail, whatsappNumber } from "@/lib/contact";
+
+const phoneLabel = (n: string) => n.replace(/^55(\d{2})(\d{4,5})(\d{4})$/, "($1) $2-$3");
 export function Footer() {
   return (
     <footer className="nx-footer">
@@ -9,6 +12,13 @@ export function Footer() {
               nexcript<span className="nx-logo-dot">.</span>
             </Link>
             <p>Sites, automações e software para empresas.</p>
+            {/* O e-mail aparece quando NEXT_PUBLIC_CONTACT_EMAIL estiver configurado. */}
+            {(contactEmail || whatsappNumber) && (
+              <address className="nx-footer-contact">
+                {whatsappNumber && <a href={`https://wa.me/${whatsappNumber}`}>WhatsApp {phoneLabel(whatsappNumber)}</a>}
+                {contactEmail && <a href={`mailto:${contactEmail}`}>{contactEmail}</a>}
+              </address>
+            )}
           </div>
           <div className="nx-footer-links">
             <Link href="/#solucoes">Soluções</Link>

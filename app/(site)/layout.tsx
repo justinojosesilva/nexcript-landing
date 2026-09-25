@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { MobileCta } from "@/components/layout/MobileCta";
 import { RevealObserver } from "@/components/ui/RevealObserver";
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
@@ -10,6 +11,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         {children}
       </main>
       <Footer />
+      <MobileCta />
       <RevealObserver />
     </>
   );

@@ -7,12 +7,14 @@ import {
   MessageCircle,
   MousePointer2,
   MoveUpRight,
+  Quote,
   ShieldCheck,
   Sparkles,
   Workflow,
 } from "lucide-react";
 import { ContactForm } from "./contato/ContactForm";
 import { whatsappUrl } from "@/lib/contact";
+import { testimonials } from "./testimonials";
 
 const plans = [
   {
@@ -742,6 +744,39 @@ export default function Home() {
           </a>
         </div>
       </section>
+
+      {testimonials.length > 0 && (
+        <section className="nx-section nx-testimonials" id="depoimentos">
+          <div className="nx-container">
+            <div className="nx-section-heading" {...reveal()}>
+              <div>
+                <Label>QUEM JÁ DEU O PRÓXIMO PASSO</Label>
+                <h2>
+                  Nas palavras
+                  <br />
+                  de quem contratou.
+                </h2>
+              </div>
+            </div>
+            <div className="nx-testimonial-grid">
+              {testimonials.map((t, i) => (
+                <figure key={t.name} {...reveal(i)}>
+                  <Quote size={26} aria-hidden="true" />
+                  <blockquote>
+                    <p>{t.quote}</p>
+                  </blockquote>
+                  <figcaption>
+                    <strong>{t.name}</strong>
+                    <span>
+                      {t.role} · {t.company}
+                    </span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="nx-section" id="duvidas">
         <div className="nx-container nx-faq-grid">
