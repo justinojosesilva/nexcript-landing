@@ -664,7 +664,7 @@ export default function Home() {
                   </p>
                 </div>
                 <a
-                  href="https://aurora-six-dun.vercel.app/"
+                  href="https://previa.nexcript.com.br/aurora"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Visitar a demonstração Aurora"
@@ -715,7 +715,7 @@ export default function Home() {
                   </p>
                 </div>
                 <a
-                  href="https://prumo-lemon.vercel.app/"
+                  href="https://previa.nexcript.com.br/prumo"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Visitar a demonstração Prumo"
