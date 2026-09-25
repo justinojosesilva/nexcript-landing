@@ -564,7 +564,7 @@ summary:focus-visible {
   width: 90%;
   font-family: var(--font-mono);
   font-size: 9px;
-  color: #78847c;
+  color: #5b6a5f;
 }
 .nx-section {
   padding-block: 100px;
@@ -610,7 +610,7 @@ summary:focus-visible {
 .nx-number {
   font-family: var(--font-mono);
   font-size: 11px;
-  color: #6f7e73;
+  color: #5b6a5f;
 }
 .nx-problem-grid h3 {
   font-weight: 700;
@@ -1221,7 +1221,8 @@ summary:focus-visible {
   position: relative;
   padding-block: 33px;
 }
-.nx-demo-content h3 {
+.nx-demo-content .nx-demo-title {
+  display: block;
   font-family: Georgia, serif;
   font-size: 32px;
   line-height: 1.1;
@@ -2022,7 +2023,7 @@ summary:focus-visible {
   .nx-demo-content {
     grid-template-columns: 1.5fr 1fr;
   }
-  .nx-demo-content h3 {
+  .nx-demo-content .nx-demo-title {
     font-size: 27px;
   }
   .nx-demo-nav {
@@ -2121,5 +2122,148 @@ summary:focus-visible {
   }
   .nx-not-found h1 {
     letter-spacing: -1.5px;
+  }
+}
+
+/* ───────── Movimento (Parte 1): entrada ao rolar, hover dos cards e FAQ ─────────
+   Só com "nx-js" (script do layout raiz) e sem "reduzir movimento". A entrada anima
+   `translate`/`opacity`, e o hover usa `transform`: um não trava o outro. */
+:root {
+  --nx-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nx-js [data-reveal]:not(.is-visible) {
+    opacity: 0;
+  }
+  .nx-js [data-reveal].is-visible:not(.no-anim) {
+    animation: nx-reveal 0.7s var(--nx-ease-out) calc(var(--i, 0) * 90ms) both;
+  }
+}
+@keyframes nx-reveal {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* Setas dos botões e links acompanham o hover. */
+.nx-button svg,
+.nx-text-link svg,
+.nx-care-plans a svg,
+.nx-real-case-content a svg,
+.nx-step-line svg,
+.nx-problem-grid article > svg {
+  transition: transform 0.25s var(--nx-ease-out), color 0.25s;
+}
+.nx-button:hover svg,
+.nx-text-link:hover svg,
+.nx-care-plans a:hover svg,
+.nx-real-case-content a:hover svg {
+  transform: translate(2px, -2px);
+}
+
+@media (hover: hover) {
+  .nx-problem-grid article,
+  .nx-plan,
+  .nx-real-case,
+  .nx-demo-window,
+  .nx-demo-description a {
+    transition:
+      transform 0.3s var(--nx-ease-out),
+      box-shadow 0.3s var(--nx-ease-out),
+      border-color 0.3s,
+      background-color 0.3s,
+      color 0.3s;
+  }
+  .nx-care-plans article,
+  .nx-steps article {
+    transition: background-color 0.3s;
+  }
+
+  .nx-problem-grid article:hover {
+    border-top-color: var(--nx-orange);
+  }
+  .nx-problem-grid article:hover > svg {
+    transform: translate(3px, -3px);
+    color: #b84417;
+  }
+
+  .nx-plan:hover {
+    transform: translateY(-6px);
+    border-color: #c9cbc2;
+    box-shadow: 0 22px 44px -28px rgba(21, 43, 53, 0.45);
+  }
+  .nx-plan-featured:hover {
+    border-color: var(--nx-ink);
+    box-shadow: 0 26px 50px -24px rgba(21, 43, 53, 0.7);
+  }
+
+  .nx-care-plans article:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+
+  .nx-steps article:hover .nx-step-line svg {
+    transform: translateX(5px);
+    color: #b84417;
+  }
+
+  .nx-real-case:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 48px -32px rgba(21, 43, 53, 0.45);
+  }
+
+  .nx-demo-grid article:hover .nx-demo-window {
+    transform: translateY(-6px);
+    box-shadow: 0 26px 50px -30px rgba(21, 43, 53, 0.5);
+  }
+  .nx-demo-description a:hover {
+    background-color: var(--nx-orange);
+    border-color: var(--nx-orange);
+    color: #172e37;
+    transform: rotate(45deg);
+  }
+}
+
+/* FAQ: o "+" gira e a resposta abre com transição. A altura anima onde o
+   navegador permite (interpolate-size); nos demais, a resposta só aparece suave. */
+.nx-faq-list summary {
+  transition: color 0.2s;
+}
+.nx-faq-list summary:hover {
+  color: #b84417;
+}
+.nx-faq-list summary span {
+  transition: transform 0.3s var(--nx-ease-out);
+}
+@supports (interpolate-size: allow-keywords) {
+  .nx-faq-list {
+    interpolate-size: allow-keywords;
+  }
+  .nx-faq-list details::details-content {
+    block-size: 0;
+    overflow-y: clip;
+    transition:
+      block-size 0.35s var(--nx-ease-out),
+      content-visibility 0.35s allow-discrete;
+  }
+  .nx-faq-list details[open]::details-content {
+    block-size: auto;
+  }
+}
+.nx-faq-list details[open] p {
+  animation: nx-faq-in 0.35s var(--nx-ease-out);
+}
+@keyframes nx-faq-in {
+  from {
+    opacity: 0;
+    translate: 0 -6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
   }
 }

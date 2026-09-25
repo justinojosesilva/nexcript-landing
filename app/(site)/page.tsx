@@ -87,6 +87,11 @@ const faqs = [
     "Para Landing Page e Site Essencial, 50% na contratação e 50% antes da publicação. Para o Business, 40% na contratação, 30% na aprovação visual e 30% antes da publicação. Escopo, condições e custos externos ficam registrados na proposta.",
   ],
 ];
+/** Entrada suave ao rolar (RevealObserver); i = posição no grupo, para escalonar. */
+function reveal(i = 0) {
+  return { "data-reveal": "", style: { "--i": i } as React.CSSProperties };
+}
+
 function Label({ children }: { children: React.ReactNode }) {
   return (
     <p className="nx-eyebrow">
@@ -205,7 +210,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-        <div className="nx-container nx-audience">
+        <div className="nx-container nx-audience" {...reveal(2)}>
           <span>PENSADO PARA NEGÓCIOS COMO O SEU</span>
           <p>Clínicas & consultórios</p>
           <span className="nx-plus">+</span>
@@ -217,7 +222,7 @@ export default function Home() {
 
       <section className="nx-section nx-problem" id="problema">
         <div className="nx-container">
-          <div className="nx-section-heading">
+          <div className="nx-section-heading" {...reveal()}>
             <div>
               <Label>O PROBLEMA NÃO É O SEU SERVIÇO</Label>
               <h2>
@@ -248,8 +253,8 @@ export default function Home() {
                 "Toda conversa começa do zero?",
                 "Formulários e chamadas claras ajudam o cliente a explicar o que precisa antes de chegar ao seu atendimento.",
               ],
-            ].map(([n, t, d]) => (
-              <article key={n}>
+            ].map(([n, t, d], i) => (
+              <article key={n} {...reveal(i)}>
                 <span className="nx-number">{n}</span>
                 <h3>{t}</h3>
                 <p>{d}</p>
@@ -262,7 +267,7 @@ export default function Home() {
 
       <section className="nx-section nx-solutions" id="solucoes">
         <div className="nx-container">
-          <div className="nx-section-heading">
+          <div className="nx-section-heading" {...reveal()}>
             <div>
               <Label>SOLUÇÕES NA MEDIDA DO SEU MOMENTO</Label>
               <h2>
@@ -281,6 +286,7 @@ export default function Home() {
               <article
                 className={`nx-plan ${i === 1 ? "nx-plan-featured" : ""}`}
                 key={plan.name}
+                {...reveal(i)}
               >
                 {i === 1 && (
                   <span className="nx-recommended">
@@ -343,7 +349,7 @@ export default function Home() {
 
       <section className="nx-section nx-care" id="care">
         <div className="nx-container">
-          <div className="nx-care-heading">
+          <div className="nx-care-heading" {...reveal()}>
             <div>
               <Label>NEXCRIPT CARE</Label>
               <h2>
@@ -380,8 +386,8 @@ export default function Home() {
                 "Para uma operação mais ativa.",
                 "Tudo do Plus, com até 3 horas/mês no total, prioridade e reunião trimestral.",
               ],
-            ].map(([n, p, d, f]) => (
-              <article key={n}>
+            ].map(([n, p, d, f], i) => (
+              <article key={n} {...reveal(i)}>
                 <div>
                   <h3>Care {n}</h3>
                   <p>{d}</p>
@@ -407,7 +413,7 @@ export default function Home() {
 
       <section className="nx-section" id="processo">
         <div className="nx-container">
-          <div className="nx-section-heading">
+          <div className="nx-section-heading" {...reveal()}>
             <div>
               <Label>PROXIMIDADE EM CADA ETAPA</Label>
               <h2>
@@ -443,8 +449,8 @@ export default function Home() {
                 "Publicamos e cuidamos",
                 "Validamos o site, formulários e links. Depois da aprovação, publicamos e iniciamos o acompanhamento contratado.",
               ],
-            ].map(([n, t, d]) => (
-              <article key={n}>
+            ].map(([n, t, d], i) => (
+              <article key={n} {...reveal(i)}>
                 <div className="nx-step-line">
                   <span>{n}</span>
                   <ArrowRight size={18} />
@@ -459,7 +465,7 @@ export default function Home() {
 
       <section className="nx-section nx-demos" id="demonstracoes">
         <div className="nx-container">
-          <div className="nx-section-heading">
+          <div className="nx-section-heading" {...reveal()}>
             <div>
               <Label>POSSIBILIDADES NA PRÁTICA</Label>
               <h2>
@@ -473,7 +479,7 @@ export default function Home() {
               e duas demonstrações navegáveis para os nichos que atendemos.
             </p>
           </div>
-          <article className="nx-real-case">
+          <article className="nx-real-case" {...reveal()}>
             <div className="nx-gfr-preview" aria-hidden="true">
               <div className="nx-gfr-topbar">
                 <div className="nx-gfr-brand">
@@ -533,7 +539,7 @@ export default function Home() {
               </a>
             </div>
           </article>
-          <article className="nx-real-case nx-latis-case">
+          <article className="nx-real-case nx-latis-case" {...reveal()}>
             <div className="nx-latis-preview" aria-hidden="true">
               <div className="nx-latis-ruler" />
               <div className="nx-latis-topbar">
@@ -586,8 +592,8 @@ export default function Home() {
             </div>
           </article>
           <div className="nx-demo-grid">
-            <article>
-              <div className="nx-demo-window nx-demo-clinic">
+            <article {...reveal(0)}>
+              <div className="nx-demo-window nx-demo-clinic" aria-hidden="true">
                 <div className="nx-demo-nav">
                   aurora<span>SAÚDE & BEM-ESTAR</span>
                   <span>↗</span>
@@ -597,13 +603,13 @@ export default function Home() {
                     <span className="nx-mini-label">
                       ESPAÇO PARA CUIDAR DE VOCÊ
                     </span>
-                    <h3>
+                    <strong className="nx-demo-title">
                       Seu bem-estar
                       <br />
                       merece tempo
                       <br />
                       <em>e atenção.</em>
-                    </h3>
+                    </strong>
                     <span className="nx-demo-fake-button">
                       Conheça nossas especialidades ↗
                     </span>
@@ -638,8 +644,8 @@ export default function Home() {
                 </a>
               </div>
             </article>
-            <article>
-              <div className="nx-demo-window nx-demo-service">
+            <article {...reveal(1)}>
+              <div className="nx-demo-window nx-demo-service" aria-hidden="true">
                 <div className="nx-demo-nav">
                   PRUMO<span>INSTALAÇÃO & MANUTENÇÃO</span>
                   <span>↗</span>
@@ -649,13 +655,13 @@ export default function Home() {
                     <span className="nx-mini-label">
                       QUEM RESOLVE, FAZ BEM-FEITO.
                     </span>
-                    <h3>
+                    <strong className="nx-demo-title">
                       Sua próxima
                       <br />
                       obra começa
                       <br />
                       <em>com confiança.</em>
-                    </h3>
+                    </strong>
                     <span className="nx-demo-fake-button">
                       Solicite seu orçamento ↗
                     </span>
@@ -694,7 +700,7 @@ export default function Home() {
       </section>
 
       <section className="nx-evolution">
-        <div className="nx-container">
+        <div className="nx-container" {...reveal()}>
           <Workflow size={34} />
           <div>
             <Label>UMA BASE PARA O QUE VEM DEPOIS</Label>
@@ -712,7 +718,7 @@ export default function Home() {
 
       <section className="nx-section" id="duvidas">
         <div className="nx-container nx-faq-grid">
-          <div>
+          <div {...reveal()}>
             <Label>SEM PONTAS SOLTAS</Label>
             <h2>
               Boas perguntas.
@@ -727,7 +733,7 @@ export default function Home() {
               </a>
             </p>
           </div>
-          <div className="nx-faq-list">
+          <div className="nx-faq-list" {...reveal(1)}>
             {faqs.map(([q, a]) => (
               <details key={q}>
                 <summary>
@@ -743,7 +749,7 @@ export default function Home() {
 
       <section className="nx-section nx-contact" id="diagnostico">
         <div className="nx-container nx-contact-grid">
-          <div>
+          <div {...reveal()}>
             <Label>VAMOS DAR O PRÓXIMO PASSO?</Label>
             <h2>
               Seu negócio tem
