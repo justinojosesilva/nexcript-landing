@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, Menu, X } from "lucide-react";
@@ -9,10 +9,44 @@ const links = [
   ["processo", "Como funciona"],
   ["demonstracoes", "Demonstrações"],
 ];
+/** Seção visível agora (para destacar no menu) e se a página já rolou. */
+function useScrollState() {
+  const [active, setActive] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    const sections = links
+      .map(([id]) => document.getElementById(id))
+      .filter((el): el is HTMLElement => Boolean(el));
+    // Faixa no meio da tela: a seção que a cruza é a atual.
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActive(entry.target.id);
+          else setActive((cur) => (cur === entry.target.id ? null : cur));
+        }
+      },
+      { rootMargin: "-45% 0px -50% 0px" },
+    );
+    sections.forEach((el) => io.observe(el));
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      io.disconnect();
+    };
+  }, []);
+
+  return { active, scrolled };
+}
+
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const { active, scrolled } = useScrollState();
   return (
-    <header className="nx-header">
+    <header className={`nx-header${scrolled ? " nx-header-scrolled" : ""}`}>
       <a className="nx-skip" href="#conteudo">
         Pular para o conteúdo
       </a>
@@ -37,7 +71,7 @@ export function Navbar() {
         </Link>
         <div className="nx-desktop-links">
           {links.map(([id, text]) => (
-            <Link key={id} href={`/#${id}`}>
+            <Link key={id} href={`/#${id}`} aria-current={active === id ? "location" : undefined}>
               {text}
             </Link>
           ))}
@@ -60,7 +94,12 @@ export function Navbar() {
         {open && (
           <div id="mobile-nav" className="nx-mobile-nav">
             {links.map(([id, text]) => (
-              <Link onClick={() => setOpen(false)} key={id} href={`/#${id}`}>
+              <Link
+                onClick={() => setOpen(false)}
+                key={id}
+                href={`/#${id}`}
+                aria-current={active === id ? "location" : undefined}
+              >
                 {text}
               </Link>
             ))}

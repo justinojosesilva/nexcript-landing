@@ -57,6 +57,19 @@ const plans = [
     ],
   },
 ];
+/** Segmentos da faixa do topo (os nichos que a prospecção atende). */
+const audience = [
+  "Clínicas & consultórios",
+  "Prestadores de serviços",
+  "Pequenas empresas",
+  "Odontologia",
+  "Estética",
+  "Fisioterapia",
+  "Veterinária & pet",
+  "Oficinas & assistência técnica",
+  "Reformas & manutenção",
+];
+
 const faqs = [
   [
     "Qual solução faz sentido para a minha empresa?",
@@ -174,6 +187,10 @@ export default function Home() {
                     </div>
                     <span className="nx-preview-button">
                       Vamos conversar <ArrowUpRight size={12} />
+                      {/* Cursor da animação do topo: vai até o botão e "clica". */}
+                      <span className="nx-hero-cursor" aria-hidden="true">
+                        <MousePointer2 size={18} />
+                      </span>
                     </span>
                   </div>
                   <div className="nx-sculpture">
@@ -212,11 +229,21 @@ export default function Home() {
         </div>
         <div className="nx-container nx-audience" {...reveal(2)}>
           <span>PENSADO PARA NEGÓCIOS COMO O SEU</span>
-          <p>Clínicas & consultórios</p>
-          <span className="nx-plus">+</span>
-          <p>Prestadores de serviços</p>
-          <span className="nx-plus">+</span>
-          <p>Pequenas empresas</p>
+          <div className="nx-marquee">
+            {/* A lista aparece duas vezes para o deslize não ter emenda; a cópia é só visual. */}
+            {[false, true].map((copy) => (
+              <ul key={String(copy)} aria-hidden={copy || undefined}>
+                {audience.map((a) => (
+                  <li key={a}>
+                    {a}
+                    <span className="nx-plus" aria-hidden="true">
+                      +
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ))}
+          </div>
         </div>
       </section>
 

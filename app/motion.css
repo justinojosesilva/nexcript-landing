@@ -1,0 +1,441 @@
+/* Movimento da landing (entrada ao rolar, hovers, FAQ, topo, faixa de nichos,
+   etapas e menu). Tudo respeita "reduzir movimento". */
+
+/* ───────── Movimento (Parte 1): entrada ao rolar, hover dos cards e FAQ ─────────
+   Só com "nx-js" (script do layout raiz) e sem "reduzir movimento". A entrada anima
+   `translate`/`opacity`, e o hover usa `transform`: um não trava o outro. */
+:root {
+  --nx-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nx-js [data-reveal]:not(.is-visible) {
+    opacity: 0;
+  }
+  .nx-js [data-reveal].is-visible:not(.no-anim) {
+    animation: nx-reveal 0.7s var(--nx-ease-out) calc(var(--i, 0) * 90ms) both;
+  }
+}
+@keyframes nx-reveal {
+  from {
+    opacity: 0;
+    translate: 0 24px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* Setas dos botões e links acompanham o hover. */
+.nx-button svg,
+.nx-text-link svg,
+.nx-care-plans a svg,
+.nx-real-case-content a svg,
+.nx-step-line svg,
+.nx-problem-grid article > svg {
+  transition: transform 0.25s var(--nx-ease-out), color 0.25s;
+}
+.nx-button:hover svg,
+.nx-text-link:hover svg,
+.nx-care-plans a:hover svg,
+.nx-real-case-content a:hover svg {
+  transform: translate(2px, -2px);
+}
+
+@media (hover: hover) {
+  .nx-problem-grid article,
+  .nx-plan,
+  .nx-real-case,
+  .nx-demo-window,
+  .nx-demo-description a {
+    transition:
+      transform 0.3s var(--nx-ease-out),
+      box-shadow 0.3s var(--nx-ease-out),
+      border-color 0.3s,
+      background-color 0.3s,
+      color 0.3s;
+  }
+  .nx-care-plans article,
+  .nx-steps article {
+    transition: background-color 0.3s;
+  }
+
+  .nx-problem-grid article:hover {
+    border-top-color: var(--nx-orange);
+  }
+  .nx-problem-grid article:hover > svg {
+    transform: translate(3px, -3px);
+    color: #b84417;
+  }
+
+  .nx-plan:hover {
+    transform: translateY(-6px);
+    border-color: #c9cbc2;
+    box-shadow: 0 22px 44px -28px rgba(21, 43, 53, 0.45);
+  }
+  .nx-plan-featured:hover {
+    border-color: var(--nx-ink);
+    box-shadow: 0 26px 50px -24px rgba(21, 43, 53, 0.7);
+  }
+
+  .nx-care-plans article:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+
+  .nx-steps article:hover .nx-step-line svg {
+    transform: translateX(5px);
+    color: #b84417;
+  }
+
+  .nx-real-case:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 24px 48px -32px rgba(21, 43, 53, 0.45);
+  }
+
+  .nx-demo-grid article:hover .nx-demo-window {
+    transform: translateY(-6px);
+    box-shadow: 0 26px 50px -30px rgba(21, 43, 53, 0.5);
+  }
+  .nx-demo-description a:hover {
+    background-color: var(--nx-orange);
+    border-color: var(--nx-orange);
+    color: #172e37;
+    transform: rotate(45deg);
+  }
+}
+
+/* FAQ: o "+" gira e a resposta abre com transição. A altura anima onde o
+   navegador permite (interpolate-size); nos demais, a resposta só aparece suave. */
+.nx-faq-list summary {
+  transition: color 0.2s;
+}
+.nx-faq-list summary:hover {
+  color: #b84417;
+}
+.nx-faq-list summary span {
+  transition: transform 0.3s var(--nx-ease-out);
+}
+@supports (interpolate-size: allow-keywords) {
+  .nx-faq-list {
+    interpolate-size: allow-keywords;
+  }
+  .nx-faq-list details::details-content {
+    block-size: 0;
+    overflow-y: clip;
+    transition:
+      block-size 0.35s var(--nx-ease-out),
+      content-visibility 0.35s allow-discrete;
+  }
+  .nx-faq-list details[open]::details-content {
+    block-size: auto;
+  }
+}
+.nx-faq-list details[open] p {
+  animation: nx-faq-in 0.35s var(--nx-ease-out);
+}
+@keyframes nx-faq-in {
+  from {
+    opacity: 0;
+    translate: 0 -6px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+/* ───────── Movimento (Parte 2): topo vivo, faixa de nichos, etapas e menu ───────── */
+
+/* Menu: sombra ao rolar (sem mudar a altura, para a página não pular) e seção atual. */
+.nx-header {
+  transition:
+    box-shadow 0.3s,
+    background-color 0.3s;
+}
+.nx-header-scrolled {
+  background: rgba(250, 249, 245, 0.92);
+  box-shadow: 0 10px 30px -18px rgba(21, 43, 53, 0.35);
+}
+.nx-logo {
+  transition: scale 0.3s var(--nx-ease-out);
+  transform-origin: left center;
+}
+.nx-header-scrolled .nx-logo {
+  scale: 0.92;
+}
+.nx-desktop-links a {
+  position: relative;
+  padding-block: 6px;
+  transition: color 0.2s;
+}
+.nx-desktop-links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--nx-orange);
+  border-radius: 2px;
+  scale: 0 1;
+  transform-origin: left;
+  transition: scale 0.3s var(--nx-ease-out);
+}
+.nx-desktop-links a:hover::after,
+.nx-desktop-links a[aria-current]::after {
+  scale: 1 1;
+}
+.nx-desktop-links a[aria-current] {
+  color: var(--nx-ink);
+}
+.nx-mobile-nav a[aria-current] {
+  color: #b84417;
+  font-weight: 700;
+}
+
+/* Faixa de nichos: desliza devagar, pausa no hover; parada com "reduzir movimento". */
+.nx-marquee {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.nx-marquee ul {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 18px;
+  padding-right: 18px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.nx-marquee li {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+@media (max-width: 800px) {
+  .nx-marquee ul,
+  .nx-marquee li {
+    font-size: 11px;
+    gap: 12px;
+  }
+  .nx-marquee ul {
+    padding-right: 12px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nx-marquee ul {
+    animation: nx-marquee 38s linear infinite;
+  }
+  .nx-marquee:hover ul {
+    animation-play-state: paused;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nx-marquee {
+    mask-image: none;
+  }
+  .nx-marquee ul {
+    flex-wrap: wrap;
+    white-space: normal;
+  }
+  .nx-marquee ul[aria-hidden] {
+    display: none;
+  }
+}
+@keyframes nx-marquee {
+  to {
+    translate: -100% 0;
+  }
+}
+
+/* Topo: ciclo de ~9 s contando "site → clique → contato". Só propriedades
+   independentes (translate/scale/opacity) para não brigar com os rotate existentes. */
+.nx-preview-button {
+  position: relative;
+}
+.nx-hero-cursor {
+  position: absolute;
+  left: 62%;
+  top: 55%;
+  color: var(--nx-ink);
+  filter: drop-shadow(0 2px 3px rgba(21, 43, 53, 0.3));
+  opacity: 0;
+  pointer-events: none;
+}
+.nx-hero-cursor svg {
+  fill: white;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nx-preview-lines i {
+    transform-origin: left;
+    animation: nx-hero-load 9s var(--nx-ease-out) infinite;
+  }
+  .nx-preview-lines i:last-child {
+    animation-delay: 0.12s;
+  }
+  .nx-hero-cursor {
+    animation: nx-hero-cursor 9s var(--nx-ease-out) infinite;
+  }
+  .nx-preview-button {
+    animation: nx-hero-press 9s ease-out infinite;
+  }
+  .nx-contact-notice {
+    animation: nx-hero-notice 9s var(--nx-ease-out) infinite;
+  }
+  .nx-contact-notice > svg {
+    animation: nx-hero-read 9s ease-out infinite;
+  }
+  .nx-care-notice .nx-status-dot,
+  .nx-hero-note .nx-status-dot {
+    animation: nx-pulse 2.4s ease-out infinite;
+  }
+  .nx-orbit-two {
+    animation: nx-orbit 80s linear infinite;
+  }
+}
+@keyframes nx-hero-load {
+  0% {
+    scale: 0 1;
+  }
+  8%,
+  100% {
+    scale: 1 1;
+  }
+}
+@keyframes nx-hero-cursor {
+  0%,
+  12% {
+    opacity: 0;
+    translate: 90px 70px;
+  }
+  18% {
+    opacity: 1;
+    translate: 90px 70px;
+  }
+  34% {
+    translate: 0 0;
+    scale: 1;
+  }
+  38% {
+    scale: 0.82;
+  }
+  42% {
+    scale: 1;
+    opacity: 1;
+  }
+  52%,
+  100% {
+    opacity: 0;
+    translate: 0 0;
+  }
+}
+@keyframes nx-hero-press {
+  0%,
+  35% {
+    scale: 1;
+  }
+  38% {
+    scale: 0.94;
+    background: #3d6a55;
+  }
+  42%,
+  100% {
+    scale: 1;
+  }
+}
+@keyframes nx-hero-notice {
+  0%,
+  42% {
+    opacity: 0;
+    translate: 0 18px;
+    scale: 0.96;
+  }
+  48% {
+    opacity: 1;
+    translate: 0 -3px;
+    scale: 1;
+  }
+  51%,
+  88% {
+    opacity: 1;
+    translate: 0 0;
+  }
+  95%,
+  100% {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+@keyframes nx-hero-read {
+  0%,
+  58% {
+    opacity: 0.35;
+  }
+  62%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes nx-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(185, 211, 159, 0.7);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 7px rgba(185, 211, 159, 0);
+  }
+}
+@keyframes nx-orbit {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* Como funciona: linha que se preenche com a rolagem (ou de uma vez, onde não há
+   animação por rolagem). Só com as 4 etapas lado a lado. */
+@media (min-width: 801px) {
+  .nx-steps {
+    position: relative;
+  }
+  .nx-steps::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--nx-orange);
+    transform-origin: left;
+    pointer-events: none;
+  }
+}
+@media (min-width: 801px) and (prefers-reduced-motion: no-preference) {
+  .nx-steps::after {
+    scale: 0 1;
+    transition: scale 1.6s var(--nx-ease-out) 0.2s;
+  }
+  .nx-steps:has(article.is-visible)::after {
+    scale: 1 1;
+  }
+  @supports (animation-timeline: view()) {
+    .nx-steps::after,
+    .nx-steps:has(article.is-visible)::after {
+      transition: none;
+      animation: nx-fill linear both;
+      animation-timeline: view();
+      animation-range: entry 60% cover 50%;
+    }
+  }
+}
+@keyframes nx-fill {
+  from {
+    scale: 0 1;
+  }
+  to {
+    scale: 1 1;
+  }
+}

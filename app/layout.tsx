@@ -6,6 +6,7 @@ import { createMetadata } from "@/seo/metadata";
 import { siteConfig } from "@/starter.config";
 import "./globals.css";
 import "@/themes/essential.css";
+import "./motion.css";
 
 const manrope = Manrope({
   variable: "--font-manrope",
